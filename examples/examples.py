@@ -19,34 +19,74 @@ q = Policy(policy_type=http_api_policy_type,
            action="*",
            decision="allow")
 
-a1 = Policy(policy_type=http_api_policy_type, 
-           principal=("a2cps", "jstubbs"), 
-           resource=("a2cps", "files", "s2/home/jstubbs/*"),
-           action="P*",
-           decision="allow")
-      
-a2 = Policy(policy_type=http_api_policy_type, 
-           principal=("a2cps", "jstubbs"), 
-           resource=("a2cps", "files", "s2/*"),
-           action="*",
-           decision="deny")
-
-b1 = Policy(policy_type=http_api_policy_type, 
-           principal=("a2cps", "jstubbs"), 
-           resource=("a2cps", "files", "s2/home/*"),
-           action="*",
-           decision="allow")
-
-
+# Note: p => q BUT q NOT=> p
 checker = PolicyEquialenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[p],
                                   policy_set_q=[q])
 
 
-# # Note: {a1, a2} => {b1} but {b1} NOT=> {a1,a2}
-checkr2 = PolicyEquialenceChecker(policy_type=http_api_policy_type, 
+
+a1 = Policy(policy_type=http_api_policy_type, 
+           principal=("a2cps", "jstubbs"), 
+           resource=("a2cps", "files", "s2/home/jstubbs/*"),
+           action="*",
+           decision="allow")
+
+a2 = Policy(policy_type=http_api_policy_type, 
+           principal=("a2cps", "jstubbs"), 
+           resource=("a2cps", "files", "s2/*"),
+           action="PUT",
+           decision="deny")
+
+a3 = Policy(policy_type=http_api_policy_type, 
+           principal=("a2cps", "jstubbs"), 
+           resource=("a2cps", "files", "s2/*"),
+           action="POST",
+           decision="deny")
+
+b1 = Policy(policy_type=http_api_policy_type, 
+           principal=("a2cps", "jstubbs"), 
+           resource=("a2cps", "files", "s2/home/jstubbs/a.out"),
+           action="GET",
+           decision="allow")
+
+b2 = Policy(policy_type=http_api_policy_type, 
+           principal=("a2cps", "jstubbs"), 
+           resource=("a2cps", "files", "s2/home/jstubbs/b.out"),
+           action="GET",
+           decision="allow")
+
+
+# Note: {b1, b2} => {a1, a2, a3}    but   {a1,a2,a3}  NOT=> {b1, b2}
+checker2 = PolicyEquialenceChecker(policy_type=http_api_policy_type, 
+                                  policy_set_p=[a1, a2, a3],
+                                  policy_set_q=[b1, b2])
+
+checker2.encode()
+
+c1 = Policy(policy_type=http_api_policy_type, 
+           principal=("a2cps", "jstubbs"), 
+           resource=("a2cps", "files", "s2/home/jstubbs/a.out"),
+           action="PUT",
+           decision="allow")
+
+checker3 = PolicyEquialenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[a1, a2],
-                                  policy_set_q=[b1])
+                                  policy_set_q=[c1])
+
+checker3.encode()
+
+# note that with the old version of the code, checker3 would find the counter example for q => p
+# but checker4 would "prove" that q => p even though p actually had one *additional* deny in checker4 vs checker3, 
+# so if anything, q => p should be harder in checker4. the reason is because of a bug in the orignal code that "And"ed
+# all of the deny statements together (see line ~155 of z3sec.py)
+
+checker4 = PolicyEquialenceChecker(policy_type=http_api_policy_type, 
+                                  policy_set_p=[a1, a2, a3],
+                                  policy_set_q=[c1])
+
+checker4.encode()
+
 
 # # can call these solver methods directly; these in turn call "encode()" for the user
 # checker.p_imp_q()
@@ -102,3 +142,22 @@ try:
             decision="deny")
 except Exception as e:
     print(f"couldn't create a3, as expected. Error message: {e}")
+
+
+r = Policy(policy_type=http_api_policy_type, 
+           principal=("a2", "cpsjstubbs"), 
+           resource=("a2", "files", "s2/home/jstubbs"),
+           action="GET",
+           decision="allow")
+      
+s = Policy(policy_type=http_api_policy_type, 
+           principal=("a2cps", "jstubbs"), 
+           resource=("a2", "files", "s2/home/jstubbs"),
+           action="*",
+           decision="allow")
+
+checker5 = PolicyEquialenceChecker(policy_type=http_api_policy_type, 
+                                  policy_set_p=[r],
+                                  policy_set_q=[s])
+
+checker5.encode()
