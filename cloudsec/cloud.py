@@ -5,12 +5,12 @@ from core import ExactMatching, OneWildcardMatching
 from core import StringEnumComponent, StringComponent, TupleComponent
 
 # policies
-from core import PolicyType, Policy, PolicyEquialenceChecker
+from core import PolicyType
 
 # constants
 from core import ALPHANUM_SET, PATH_CHAR_SET
 
-tenant = StringEnumComponent(name="tenant", values=set(["a2cps", "cyverse", "vdj"]), matching_type=ExactMatching)
+tenant = StringEnumComponent(name="tenant", values=set(["a2", "a2cps", "cyverse", "vdj"]), matching_type=ExactMatching)
 username = StringComponent(name="username", char_set=ALPHANUM_SET, max_len=25, matching_type=OneWildcardMatching)
 principal = TupleComponent(name="principal", fields=[tenant, username])
 
