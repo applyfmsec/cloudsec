@@ -150,23 +150,25 @@ class Z3Backend(CloudsecBackend):
         if len(deny_match_list) == 0:
             return z3.Or(*allow_match_list)
         else:
-            return z3.And(z3.Or(*allow_match_list), z3.Not(z3.And(*deny_match_list)))
+            # TODO -- review this with smruti; the original libraries had a misake here with a
+            #     z3.Not(z3.And(*deny)) on the deny list. That meant 
+            return z3.And(z3.Or(*allow_match_list), z3.Not(z3.Or(*deny_match_list)))
 
 
     def encode(self):
-        p_allow_set = [p for p in self.policy_set_p if p.components.decision.data == 'allow']
-        p_allow_match_list = self.encode_policy_set(p_allow_set)
+        self.p_allow_set = [p for p in self.policy_set_p if p.components.decision.data == 'allow']
+        self.p_allow_match_list = self.encode_policy_set(self.p_allow_set)
 
-        p_deny_set = [p for p in self.policy_set_p if p.components.decision.data == 'deny']
-        p_deny_match_list = self.encode_policy_set(p_deny_set)
-        self.P = self.combine_allow_deny_set_encodings(p_allow_match_list, p_deny_match_list)
+        self.p_deny_set = [p for p in self.policy_set_p if p.components.decision.data == 'deny']
+        self.p_deny_match_list = self.encode_policy_set(self.p_deny_set)
+        self.P = self.combine_allow_deny_set_encodings(self.p_allow_match_list, self.p_deny_match_list)
 
-        q_allow_set = [q for q in self.policy_set_q if q.components.decision.data == 'allow']
-        q_allow_match_list = self.encode_policy_set(q_allow_set)
+        self.q_allow_set = [q for q in self.policy_set_q if q.components.decision.data == 'allow']
+        self.q_allow_match_list = self.encode_policy_set(self.q_allow_set)
         
-        q_deny_set = [q for q in self.policy_set_q if q.components.decision.data == 'deny']
-        q_deny_match_list = self.encode_policy_set(q_deny_set)
-        self.Q = self.combine_allow_deny_set_encodings(q_allow_match_list, q_deny_match_list)
+        self.q_deny_set = [q for q in self.policy_set_q if q.components.decision.data == 'deny']
+        self.q_deny_match_list = self.encode_policy_set(self.q_deny_set)
+        self.Q = self.combine_allow_deny_set_encodings(self.q_allow_match_list, self.q_deny_match_list)
 
 
     def prove(self, statement_1, statement_2):
