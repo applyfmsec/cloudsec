@@ -12,14 +12,14 @@ class CloudsecBackend(object):
         """
         raise NotImplementedError()
     
-    def p_imp_q(self):
+    def p_implies_q(self):
         """
         Determine whether policy_set_p implies policy_set_q. This method should call encode() if the
         policies have not already been encoded and should reuse the encodings otherwise.
         """
         raise NotImplementedError()
 
-    def q_imp_p(self):
+    def q_implies_p(self):
         """
         Determine whether policy_set_q implies policy_set_p. This method should call encode() if the
         policies have not already been encoded and should reuse the encodings otherwise.

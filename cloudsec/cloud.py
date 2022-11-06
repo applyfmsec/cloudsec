@@ -32,15 +32,15 @@ http_api_policy_type = PolicyType(components=[principal, resource, action])
 # Examples of policies
 p = Policy(policy_type=http_api_policy_type, 
            principal=("a2cps", "jstubbs"), 
-           resource=("a2cps", "systems", "s2"),
+           resource=("a2cps", "files", "s2/home/jstubbs"),
            action="GET",
            decision="allow")
       
 q = Policy(policy_type=http_api_policy_type, 
            principal=("a2cps", "jstubbs"), 
-           resource=("a2cps", "systems", "frontera-private"),
-           action="POST",
-           decision="deny")
+           resource=("a2cps", "files", "s2/home/jstubbs"),
+           action="*",
+           decision="allow")
 
 a1 = Policy(policy_type=http_api_policy_type, 
            principal=("a2cps", "jstubbs"), 
@@ -51,19 +51,25 @@ a1 = Policy(policy_type=http_api_policy_type,
 a2 = Policy(policy_type=http_api_policy_type, 
            principal=("a2cps", "jstubbs"), 
            resource=("a2cps", "files", "s2/*"),
-           action="P*",
+           action="*",
            decision="deny")
 
 b1 = Policy(policy_type=http_api_policy_type, 
            principal=("a2cps", "jstubbs"), 
            resource=("a2cps", "files", "s2/home/*"),
-           action="P*",
+           action="*",
            decision="allow")
 
+
+checker = PolicyEquialenceChecker(policy_type=http_api_policy_type, 
+                                  policy_set_p=[p],
+                                  policy_set_q=[q])
+
+
 # # Note: {a1, a2} => {b1} but {b1} NOT=> {a1,a2}
-# checker = PolicyEquialenceChecker(policy_type=http_api_policy_type, 
-#                                   policy_set_p=[a1, a2],
-#                                   policy_set_q=[b1])
+checkr2 = PolicyEquialenceChecker(policy_type=http_api_policy_type, 
+                                  policy_set_p=[a1, a2],
+                                  policy_set_q=[b1])
 
 # # can call these solver methods directly; these in turn call "encode()" for the user
 # checker.p_imp_q()

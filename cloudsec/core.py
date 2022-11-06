@@ -305,17 +305,17 @@ class PolicyEquialenceChecker(object):
         self.solver.encode()
         self.have_encoded = True
 
-    def p_imp_q(self):
+    def p_implies_q(self):
         if not self.have_encoded:
             self.solver.encode()
             self.have_encoded = True
-        return self.solver.p_imp_q()
+        return self.solver.p_implies_q()
 
-    def q_imp_p(self):
+    def q_implies_p(self):
         if not self.have_encoded:
             self.solver.encode()
             self.have_encoded = True
-        return self.solver.q_imp_p()
+        return self.solver.q_implies_p()
         
 
 

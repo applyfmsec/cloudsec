@@ -117,7 +117,65 @@ class Z3Backend(CloudsecBackend):
     def _encode_tuple(self, tuple_component_type, value):
         expr = self._encode_tuple_parts(tuple_component_type, value)
         return self._create_bool_encoding(tuple_component_type.name, expr)
-        
+
+    def encode_policy_set(self, P):
+        """
+        Encode a policy set, P.
+        """
+        final_result = []
+        for p in P:
+            component_encodings = []
+            # every policy has a `components` attribute which contains componenets of the different types (enum, string, tuple)
+            # as well as the decision component. 
+            for component in self.policy_type.components:
+                # The names of the attributes on the `components` object on the policy are the same as the names on the policy_type
+                # object.
+                policy_comp = getattr(p.components, component.name)
+                # the decision component is special: we don't need to encode anything from the decision component, we just need to
+                # set the is_allow_policy boolean based on it.
+                if policy_comp.name == 'decision':
+                    continue
+                # tuples have a `fields` attribute
+                if hasattr(policy_comp, 'fields'):
+                    component_encodings.append(self._encode_tuple(policy_comp, policy_comp.data))
+                elif hasattr(component, 'values'):
+                    component_encodings.append(self._encode_string_enum(policy_comp, policy_comp.data))
+                elif hasattr(policy_comp, 'max_len') and hasattr(policy_comp, 'char_set'):
+                    component_encodings.append(self._encode_string(policy_comp, policy_comp.data))
+            final_result.append(z3.And(*component_encodings))
+        return final_result
+
+    
+    def combine_allow_deny_set_encodings(self, allow_match_list, deny_match_list):
+        if len(deny_match_list) == 0:
+            return z3.Or(*allow_match_list)
+        else:
+            return z3.And(z3.Or(*allow_match_list), z3.Not(z3.And(*deny_match_list)))
+
 
     def encode(self):
-        pass
+        p_allow_set = [p for p in self.policy_set_p if p.components.decision.data == 'allow']
+        p_allow_match_list = self.encode_policy_set(p_allow_set)
+
+        p_deny_set = [p for p in self.policy_set_p if p.components.decision.data == 'deny']
+        p_deny_match_list = self.encode_policy_set(p_deny_set)
+        self.P = self.combine_allow_deny_set_encodings(p_allow_match_list, p_deny_match_list)
+
+        q_allow_set = [q for q in self.policy_set_q if q.components.decision.data == 'allow']
+        q_allow_match_list = self.encode_policy_set(q_allow_set)
+        
+        q_deny_set = [q for q in self.policy_set_q if q.components.decision.data == 'deny']
+        q_deny_match_list = self.encode_policy_set(q_deny_set)
+        self.Q = self.combine_allow_deny_set_encodings(q_allow_match_list, q_deny_match_list)
+
+
+    def prove(self, statement_1, statement_2):
+        return z3.prove(z3.Implies(statement_1, statement_2))
+
+
+    def p_implies_q(self):
+        return self.prove(self.P, self.Q)
+
+
+    def q_implies_p(self):
+        return self.prove(self.Q, self.P)
