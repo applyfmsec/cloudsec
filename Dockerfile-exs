@@ -1,0 +1,8 @@
+# Image: jstubbs/cloudsec-exs
+
+from jstubbs/cloudsec
+
+COPY examples /home/cloudsec/examples
+
+WORKDIR /home/cloudsec/examples
+
