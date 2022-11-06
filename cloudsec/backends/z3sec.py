@@ -18,6 +18,11 @@ class Z3Backend(CloudsecBackend):
 
 
     def _create_bool_encoding(self, name, expr):
+        """
+        Create a z3 boolean encoding of the expression, `expr`.
+        `name` should be the name to use for the free variable (i.e., the name of the component).
+        This should be the last method called when encoding a component. 
+        """
         free_var = z3.String(name)
         return z3.InRe(free_var, expr)
 
@@ -115,8 +120,32 @@ class Z3Backend(CloudsecBackend):
 
 
     def _encode_tuple(self, tuple_component_type, value):
+        """
+        This implementation is the most similar to the string and enum implementations where it returns a single 
+        boolean encoding. This implementation has the problem that fields within the tuple get smashed together which
+        can lead to false equivalences; for ex, p1 = (a2, cpsjstubbs) equals p2= (a2cps, jstubbs) in this impl.
+        """
         expr = self._encode_tuple_parts(tuple_component_type, value)
         return self._create_bool_encoding(tuple_component_type.name, expr)
+
+
+    def _encode_tuple_list(self, tuple_component_type, value):
+        """
+        This implementation returns a list of boolean encodings, an encoding for each field in the list. The encoding
+        is over a free variable with name = {tuple_name}_{field_name}.
+        """
+        res = []
+        for idx, field in enumerate(tuple_component_type.fields):
+            val = value[idx]
+            # check the type of each field and call the appropriate _encode method...
+            # StringComponents have a char_set and mex_len
+            if hasattr(field, "char_set") and hasattr(field, "max_len"):
+                result = self._get_string_expr(field, val)
+            elif hasattr(field, "values"):
+                result = self._get_string_enum_expr(field, val)
+            res.append(self._create_bool_encoding(f'{tuple_component_type.name}_{field.name}', result))
+        return res
+
 
     def encode_policy_set(self, P):
         """
@@ -137,7 +166,10 @@ class Z3Backend(CloudsecBackend):
                     continue
                 # tuples have a `fields` attribute
                 if hasattr(policy_comp, 'fields'):
-                    component_encodings.append(self._encode_tuple(policy_comp, policy_comp.data))
+                    # first approach, has issues with tuple fields smashing together:
+                    # component_encodings.append(self._encode_tuple(policy_comp, policy_comp.data))
+                    # second approach: create an expression for every field; result here is a list so need to use extend.
+                    component_encodings.extend(self._encode_tuple_list(policy_comp, policy_comp.data))
                 elif hasattr(component, 'values'):
                     component_encodings.append(self._encode_string_enum(policy_comp, policy_comp.data))
                 elif hasattr(policy_comp, 'max_len') and hasattr(policy_comp, 'char_set'):
