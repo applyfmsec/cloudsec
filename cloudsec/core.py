@@ -5,8 +5,9 @@ from select import select
 from typing import Dict, Tuple
 
 import sys
+# these are for the cloudsec container image --
 sys.path.append('/home/cloudsec')
-sys.path.append('/home/cloudz3sec/cloudsec')
+sys.path.append('/home/cloudsec/cloudsec')
 
 from backends.z3sec import Z3Backend
 
@@ -14,7 +15,8 @@ from backends.z3sec import Z3Backend
 # Matching strategies
 
 class BaseMatching(object):
-    pass
+    def __init__(self):
+        self.wildcard_char = None
 
 
 class ExactMatching(BaseMatching):
@@ -27,7 +29,7 @@ class ExactMatching(BaseMatching):
 
 class StandaloneWildcardMatching(BaseMatching):
     """
-    Represents a matching strategy that is exact mactching extended with a single token that matches every value. Note that this
+    Represents a matching strategy that is exact matching extended with a single token that matches every value. Note that this
     token cannot be combined with any other values to do partial matching.
 
     As an example, suppose we define a StringEnumComponent as follows:
@@ -94,7 +96,8 @@ class StringEnumComponent(BaseComponent):
     def __init__(self, name: str, values: "list[str]", matching_type: type):
         self.name = name
         self.values  = values
-        if not issubclass(matching_type, BaseMatching):
+
+        if not isinstance(matching_type, BaseMatching):
             raise Exception()
         self.matching_type = matching_type
         self.data_type = str
@@ -113,12 +116,15 @@ class OrderedStringEnumComponent(BaseComponent):
         ExactMatching when equality should be used.
     """
     def __init__(self, name: str, values: "list(str)", matching_type: type):
-        self.name = name
-        self.values  = values
-        if not issubclass(matching_type, BaseMatching):
-            raise Exception()
-        self.matching_type = matching_type
-        self.data_type = str
+        raise NotImplementedError()
+        # TODO --
+        # self.name = name
+        # self.values  = values
+        # # todo -- change to look for instance
+        # if not issubclass(matching_type, BaseMatching):
+        #     raise Exception()
+        # self.matching_type = matching_type
+        # self.data_type = str
 
 
 class StringComponent(BaseComponent):
@@ -134,7 +140,8 @@ class StringComponent(BaseComponent):
         self.name = name
         self.char_set  = char_set
         self.max_len = max_len
-        if not issubclass(matching_type, BaseMatching):
+        # todo -- change to look for instance
+        if not isinstance(matching_type, BaseMatching):
             raise Exception()
         self.matching_type = matching_type
         self.data_type = str
@@ -195,6 +202,7 @@ class PolicyComponent(object):
     """
     Container for an individual policy component
     """
+    pass
 
 
 class PolicyComponents(object):
@@ -255,7 +263,8 @@ class Policy(object):
             # set an attribute called `data` on the attribute `component.name` within the components attr
             setattr(getattr(self.components, component.name), "data", data)
         # handle the special 'decision' component that all policy types use
-        decision = StringEnumComponent(name="decision", values=["allow", "deny"], matching_type=ExactMatching)
+        exact_matching = ExactMatching()
+        decision = StringEnumComponent(name="decision", values=["allow", "deny"], matching_type=exact_matching)
         self.components.decision = decision
         try:
             data = kwargs['decision']
@@ -266,7 +275,7 @@ class Policy(object):
         self.components.decision.data = data
         
 
-class PolicyEquialenceChecker(object):
+class PolicyEquivalenceChecker(object):
     """
     Class for checking equivalence of two sets of policies.
         policy_type: The type of policies in each list.

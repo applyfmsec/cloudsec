@@ -3,7 +3,7 @@ sys.path.append('/home/cloudsec')
 sys.path.append('/home/cloudsec/cloudsec')
 
 import z3 
-from core import Policy, PolicyEquialenceChecker
+from core import Policy, PolicyEquivalenceChecker
 from cloud import http_api_policy_type
 
 # Examples of policies
@@ -20,10 +20,9 @@ q = Policy(policy_type=http_api_policy_type,
            decision="allow")
 
 # Note: p => q BUT q NOT=> p
-checker = PolicyEquialenceChecker(policy_type=http_api_policy_type, 
+checker = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[p],
                                   policy_set_q=[q])
-
 
 
 a1 = Policy(policy_type=http_api_policy_type, 
@@ -58,7 +57,7 @@ b2 = Policy(policy_type=http_api_policy_type,
 
 
 # Note: {b1, b2} => {a1, a2, a3}    but   {a1,a2,a3}  NOT=> {b1, b2}
-checker2 = PolicyEquialenceChecker(policy_type=http_api_policy_type, 
+checker2 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[a1, a2, a3],
                                   policy_set_q=[b1, b2])
 
@@ -70,7 +69,7 @@ c1 = Policy(policy_type=http_api_policy_type,
            action="PUT",
            decision="allow")
 
-checker3 = PolicyEquialenceChecker(policy_type=http_api_policy_type, 
+checker3 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[a1, a2],
                                   policy_set_q=[c1])
 
@@ -81,7 +80,7 @@ checker3.encode()
 # so if anything, q => p should be harder in checker4. the reason is because of a bug in the orignal code that "And"ed
 # all of the deny statements together (see line ~155 of z3sec.py)
 
-checker4 = PolicyEquialenceChecker(policy_type=http_api_policy_type, 
+checker4 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[a1, a2, a3],
                                   policy_set_q=[c1])
 
@@ -156,7 +155,7 @@ s = Policy(policy_type=http_api_policy_type,
            action="*",
            decision="allow")
 
-checker5 = PolicyEquialenceChecker(policy_type=http_api_policy_type, 
+checker5 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[r],
                                   policy_set_q=[s])
 

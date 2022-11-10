@@ -34,8 +34,8 @@ class Z3Backend(CloudsecBackend):
         #         we will in a future release.
         try:
             wildcard = string_enum_component_type.matching_type.wildcard_char
-        except:
-            print("Warning -- did not find the `wildcard_char` on the matching_type; defaulting to '*'.")
+        except Exception as e:
+            print(f"Warning -- did not find the `wildcard_char` on the matching_type; defaulting to '*'. Details: {e}")
             wildcard = "*"
 
         if value == wildcard:
@@ -60,8 +60,6 @@ class Z3Backend(CloudsecBackend):
     
     def _get_string_expr(self, string_component_type, value):
         charset = string_component_type.char_set
-        # todo -- at this point in time, we do not distinguish the different matching types, but
-        #         we will in a future release.
         try:
             wildcard = string_component_type.matching_type.wildcard_char
         except:
@@ -166,9 +164,6 @@ class Z3Backend(CloudsecBackend):
                     continue
                 # tuples have a `fields` attribute
                 if hasattr(policy_comp, 'fields'):
-                    # first approach, has issues with tuple fields smashing together:
-                    # component_encodings.append(self._encode_tuple(policy_comp, policy_comp.data))
-                    # second approach: create an expression for every field; result here is a list so need to use extend.
                     component_encodings.extend(self._encode_tuple_list(policy_comp, policy_comp.data))
                 elif hasattr(component, 'values'):
                     component_encodings.append(self._encode_string_enum(policy_comp, policy_comp.data))
@@ -182,8 +177,6 @@ class Z3Backend(CloudsecBackend):
         if len(deny_match_list) == 0:
             return z3.Or(*allow_match_list)
         else:
-            # TODO -- review this with smruti; the original libraries had a misake here with a
-            #     z3.Not(z3.And(*deny)) on the deny list. That meant 
             return z3.And(z3.Or(*allow_match_list), z3.Not(z3.Or(*deny_match_list)))
 
 
