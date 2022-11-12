@@ -6,6 +6,7 @@ import z3
 from core import Policy, PolicyEquivalenceChecker
 from cloud import http_api_policy_type
 
+backend='cvc5'
 # Examples of policies
 p = Policy(policy_type=http_api_policy_type, 
            principal=("a2cps", "jstubbs"), 
@@ -22,7 +23,7 @@ q = Policy(policy_type=http_api_policy_type,
 # Note: p => q BUT q NOT=> p
 checker = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[p],
-                                  policy_set_q=[q])
+                                  policy_set_q=[q], backend=backend)
 
 
 a1 = Policy(policy_type=http_api_policy_type, 

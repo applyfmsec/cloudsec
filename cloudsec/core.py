@@ -10,6 +10,7 @@ sys.path.append('/home/cloudsec')
 sys.path.append('/home/cloudsec/cloudsec')
 
 from backends.z3sec import Z3Backend
+from backends.cvc5sec import CVC5Backend
 
 
 # Matching strategies
@@ -292,7 +293,7 @@ class PolicyEquivalenceChecker(object):
                  backend="z3"
                  ):
         
-        supported_backends = set(["z3"])
+        supported_backends = set(["z3", "cvc5"])
         self.policy_type = policy_type
         self.policy_set_p = policy_set_p
         self.policy_set_q = policy_set_q
@@ -304,6 +305,8 @@ class PolicyEquivalenceChecker(object):
         self.have_encoded = False
         if self.backend == 'z3':
             self.solver = Z3Backend(policy_type, policy_set_p, policy_set_q)
+        if self.backend == 'cvc5':
+            self.solver = CVC5Backend(policy_type, policy_set_p, policy_set_q)
     
     def encode(self):
         """
