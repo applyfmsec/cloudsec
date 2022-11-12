@@ -9,7 +9,7 @@ from cloudsec.backends import CloudsecBackend
 
 class CVC5Backend(CloudsecBackend):
 
-    def __init__(self, policy_type, policy_set_p, policy_set_q) -> cvc5.Solver:
+    def __init__(self, policy_type, policy_set_p, policy_set_q)-> None:
         self.free_variables = []
         self.policy_type = policy_type
         self.policy_set_p = policy_set_p
@@ -24,7 +24,8 @@ class CVC5Backend(CloudsecBackend):
         # Set output language to SMTLIB2
         self.slv.setOption("output-language", "smt2")
         self.slv.setOption("produce-unsat-cores", "true")
-        return self.slv
+        self.string = self.slv.getStringSort()
+        #return self.slv
 
     def _create_bool_encoding(self, free_var:cvc5.Term, expr:Term)-> cvc5.Term:
         """
