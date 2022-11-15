@@ -65,6 +65,9 @@ class Z3Backend(CloudsecBackend):
         except:
             print("Warning -- did not find the `wildcard_char` on the matching_type; defaulting to '*'.")
             wildcard = "*"
+        if not wildcard:
+            raise NotImplementedError(f"Got none for wildcard for: {string_component_type.name}; wildcard must be specified.")
+
         # create
         z_all_vals_re_ref = z3.Star(z3.Union([z3.Re(z3.StringVal(c)) for c in charset]))
         # check that the value is contained within the charset plus the * character

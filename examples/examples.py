@@ -88,8 +88,8 @@ checker4.encode()
 
 
 # # can call these solver methods directly; these in turn call "encode()" for the user
-# checker.p_imp_q()
-# checker.q_imp_p()
+# checker.p_implies_q()
+# checker.q_implies_p()
 
 # # alternatively, can call encode first, if you want to delay calling the solver methods, or for fine-grained
 # # performance profiling
@@ -98,8 +98,8 @@ checker4.encode()
 # # . . . do some other work . . . 
 # #
 # # also, can do these in separate threads more efficiently after encode() has been called.
-# checker.p_imp_q()
-# checker.q_imp_p()
+# checker.p_implies_q()
+# checker.q_implies_p()
 
 
 # Tests with the Z3Backend
