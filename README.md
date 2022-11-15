@@ -57,3 +57,18 @@ counterexample
 >>> checker2.q_implies_p()
 proved
 ```
+
+## Development
+
+`cloudsec` includes a test suite based on `pytest`. The Makefile can be used to build
+the tests container image and run the tests:
+
+```
+# Build the tests image 
+$ make build-tests
+```
+
+```
+# Run the tests
+$ make test
+```

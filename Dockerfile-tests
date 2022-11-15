@@ -1,0 +1,17 @@
+# Image: jstubbs/cloudsec-tests
+
+FROM jstubbs/cloudsec
+
+
+USER root
+COPY requirements-tests.txt .
+RUN python -m pip install -r requirements-tests.txt
+
+USER cloudsec
+COPY tests/__init__.py  /home/cloudsec/tests/__init__.py
+COPY tests/test_* /home/cloudsec/tests/
+
+COPY examples /home/cloudsec/examples
+WORKDIR /home/cloudsec
+
+ENTRYPOINT ["pytest"]
