@@ -19,7 +19,9 @@ q = Policy(policy_type=http_api_policy_type,
            action="*",
            decision="allow")
 
-# Note: p => q BUT q NOT=> p
+# Note: p => q because every activity allowed by p is also allowed by q, i.e., p is less permissive than q. 
+# BUT q NOT=> p, because q allows activities that p does not (for example, any action other than GET on the
+# s2/home/jstubbs resource).
 checker = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[p],
                                   policy_set_q=[q])
