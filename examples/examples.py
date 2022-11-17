@@ -72,14 +72,18 @@ c1 = Policy(policy_type=http_api_policy_type,
 checker3 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[a1, a2],
                                   policy_set_q=[c1])
+# note that p allows all actions other than PUT on the s2/home/jstubbs/* tree (e.g., the DELETE action), so 
+# p is not less permissve than q, and hence, p NOT=> q.
+
+# On the other hand, q allows PUT:s2/home/jstubbs/a.out but p does not because of a2 (deny PUT:s2/home/jstubbs/*)
+# Therefore, q is not less permissive that p, and hence, q NOT=> p here.
 
 checker3.encode()
 
-# note that with the old version of the code, checker3 would find the counter example for q => p
-# but checker4 would "prove" that q => p even though p actually had one *additional* deny in checker4 vs checker3, 
-# so if anything, q => p should be harder in checker4. the reason is because of a bug in the orignal code that "And"ed
-# all of the deny statements together (see line ~155 of z3sec.py)
-
+# here, we add an additional deny policy (a3) to the p set, which means that q is still not less
+# permissive than p (and hence, q NOT=> p still).
+# However, p still allows some additional actions (e.g., DELETE) on the s2/home/jstubbs/* tree, so p is
+# is still not less permissive that q (and hence p NOT=> q still). 
 checker4 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[a1, a2, a3],
                                   policy_set_q=[c1])
