@@ -202,6 +202,7 @@ class Z3Backend(CloudsecBackend):
     def prove(self, statement_1, statement_2) -> ImplResult:
         """
         Determine whether statement_1 => statement_2. 
+        cf., https://github.com/Z3Prover/z3/blob/master/src/api/python/z3/z3.py#L9069
         """
         solver = z3.Solver()
         # We add the negation of the statement we are trying to prove and check if it is unsatisfiable, 
