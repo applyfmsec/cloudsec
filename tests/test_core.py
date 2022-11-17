@@ -22,7 +22,7 @@ from core import ALPHANUM_SET, PATH_CHAR_SET
 
 
 def get_test_enum():
-    # exact matching not support ed currently for strings...
+    # exact matching not supported currently for strings...
     # exact_matching_type = ExactMatching()
     one_wildcard_matching = OneWildcardMatching()
     test_enum = StringEnumComponent(name='test_enum', 
@@ -141,16 +141,15 @@ def test_z3_policy_checker_1(capsys):
                                   backend='z3')
     checker.encode()
     # note: q => p since p is more permissive. 
-    checker.q_implies_p()
-    # use capsys to capture stdout; cf., https://docs.pytest.org/en/6.2.x/capture.html
-    captured = capsys.readouterr()
-    capsys.readouterr()
-    assert 'proved' in captured.out
+    result = checker.q_implies_p()
+    assert result.proved
+    assert not result.found_counter_ex
     # note: p does not imply q since p is strictly more permissive. 
-    checker.p_implies_q()
-    captured = capsys.readouterr()
-    print(capsys.readouterr())
-    assert 'counterexample' in captured.out
+    result = checker.p_implies_q()
+    assert not result.proved
+    assert result.found_counter_ex
+    # the model should contain the counter example
+    assert result.model is not None
 
                                 
        
