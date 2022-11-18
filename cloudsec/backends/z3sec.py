@@ -5,7 +5,7 @@ A cloudsec backend based on the z3 SMT solver.
 
 import z3
 
-from cloudsec.backends import CloudsecBackend
+from cloudsec.backends import CloudsecBackend, ImplResult
 
 
 
@@ -65,6 +65,9 @@ class Z3Backend(CloudsecBackend):
         except:
             print("Warning -- did not find the `wildcard_char` on the matching_type; defaulting to '*'.")
             wildcard = "*"
+        if not wildcard:
+            raise NotImplementedError(f"Got none for wildcard for: {string_component_type.name}; wildcard must be specified.")
+
         # create
         z_all_vals_re_ref = z3.Star(z3.Union([z3.Re(z3.StringVal(c)) for c in charset]))
         # check that the value is contained within the charset plus the * character
@@ -196,13 +199,40 @@ class Z3Backend(CloudsecBackend):
         self.Q = self.combine_allow_deny_set_encodings(self.q_allow_match_list, self.q_deny_match_list)
 
 
-    def prove(self, statement_1, statement_2):
-        return z3.prove(z3.Implies(statement_1, statement_2))
+    def prove(self, statement_1, statement_2) -> ImplResult:
+        """
+        Determine whether statement_1 => statement_2. 
+        cf., https://github.com/Z3Prover/z3/blob/master/src/api/python/z3/z3.py#L9069
+        """
+        solver = z3.Solver()
+        # We add the negation of the statement we are trying to prove and check if it is unsatisfiable, 
+        # meaning that the original implication is true
+        solver.add(z3.Not(z3.Implies(statement_1, statement_2)))
+        result = solver.check()
+        # whether we were able to prove the statement. There are 3 possibilities:
+        #  a) we are able to prove the statement
+        #  b) we were able find a counterexample, disproving the statement
+        #  c) we were not able to prove the statement but we were not able to find a counter example either
+        proved = False
+        found_counter_ex = True
+        model = None
+        if result == z3.unsat:
+            proved = True
+            found_counter_ex = False
+        elif result == z3.unknown:
+            found_counter_ex = False
+            model = solver.model()
+        else:
+            # in this case we did not prove the statement but in fact found a coutner example.
+            model = solver.model()
+            
+        impl_result = ImplResult(proved=proved, found_counter_ex=found_counter_ex, model=model)
+        return impl_result
 
 
-    def p_implies_q(self):
+    def p_implies_q(self) -> ImplResult:
         return self.prove(self.P, self.Q)
 
 
-    def q_implies_p(self):
+    def q_implies_p(self) -> ImplResult:
         return self.prove(self.Q, self.P)

@@ -20,7 +20,9 @@ images:
 $ make build
 ```
 
-With the images generated, start a container with the `cloudsec` software and examples using `docker`:
+With the images generated, start a container with the `cloudsec` software and examples using `docker`:.
+Have a look at the `examples_z3.py` file, contained within the `examples` directory, for all the definitions
+of the objects used below. 
 
 ```
 $ docker run -it --rm --entrypoint=bash --name=sec  jstubbs/cloudsec-exs
@@ -31,13 +33,30 @@ Start a Python shell and import the examples:
 ```
 # from within the container started above,
 
->>> from examples import *
+>>> from examples_z3 import *
 
->>> checker.p_implies_q()
-proved
+>>> result = checker.p_implies_q()
 
->>> checker.q_implies_p()
-counterexample
+# p => q is True, meaning that the p policy set is less permissive than the q policy set
+# i.e., any activity allowed by p is also allowed by q.
+>>>  result.proved
+True
+
+>>> result = checker.q_implies_p()
+
+# q => p is False, however, because q is NOT less permissive than p; that is, q allows some activities
+# that p does not allow.
+>>> result.proved
+False
+
+# In fact, cloudsec was able to find a counter example to the statement q => p; i.e., it was able to find
+# an activity allowed by q but not by p.
+>>> result.found_counter_ex
+True
+
+# the result.model contains a counter example to the q => p statement; i.e., it contains an example of
+# an activity that is allowed by the q policy set but not by the q policy set. 
+>>> result.model
 [action = "PUT",
  resource_path = "s2/home/jstubbs",
  resource_service = "files",
@@ -45,15 +64,19 @@ counterexample
  principal_username = "jstubbs",
  principal_tenant = "a2cps"]
 
->>> checker2.p_implies_q()
-counterexample
-[resource_path = "s2/home/jstubbs/",
- action = "DELETE",
- resource_service = "files",
- resource_tenant = "a2cps",
- principal_username = "jstubbs",
- principal_tenant = "a2cps"]
+```
 
->>> checker2.q_implies_p()
-proved
+## Development
+
+`cloudsec` includes a test suite based on `pytest`. The Makefile can be used to build
+the tests container image and run the tests:
+
+```
+# Build the tests image 
+$ make build-tests
+```
+
+```
+# Run the tests
+$ make test
 ```

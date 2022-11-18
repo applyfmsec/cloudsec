@@ -20,7 +20,9 @@ q = Policy(policy_type=http_api_policy_type,
            action="*",
            decision="allow")
 
-# Note: p => q BUT q NOT=> p
+# Note: p => q because every activity allowed by p is also allowed by q, i.e., p is less permissive than q. 
+# BUT q NOT=> p, because q allows activities that p does not (for example, any action other than GET on the
+# s2/home/jstubbs resource).
 checker = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[p],
                                   policy_set_q=[q], backend=backend)
@@ -73,14 +75,18 @@ c1 = Policy(policy_type=http_api_policy_type,
 checker3 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[a1, a2],
                                   policy_set_q=[c1])
+# note that p allows all actions other than PUT on the s2/home/jstubbs/* tree (e.g., the DELETE action), so 
+# p is not less permissve than q, and hence, p NOT=> q.
+
+# On the other hand, q allows PUT:s2/home/jstubbs/a.out but p does not because of a2 (deny PUT:s2/home/jstubbs/*)
+# Therefore, q is not less permissive that p, and hence, q NOT=> p here.
 
 checker3.encode()
 
-# note that with the old version of the code, checker3 would find the counter example for q => p
-# but checker4 would "prove" that q => p even though p actually had one *additional* deny in checker4 vs checker3, 
-# so if anything, q => p should be harder in checker4. the reason is because of a bug in the orignal code that "And"ed
-# all of the deny statements together (see line ~155 of z3sec.py)
-
+# here, we add an additional deny policy (a3) to the p set, which means that q is still not less
+# permissive than p (and hence, q NOT=> p still).
+# However, p still allows some additional actions (e.g., DELETE) on the s2/home/jstubbs/* tree, so p is
+# is still not less permissive that q (and hence p NOT=> q still). 
 checker4 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[a1, a2, a3],
                                   policy_set_q=[c1])
@@ -89,8 +95,8 @@ checker4.encode()
 
 
 # # can call these solver methods directly; these in turn call "encode()" for the user
-# checker.p_imp_q()
-# checker.q_imp_p()
+# checker.p_implies_q()
+# checker.q_implies_p()
 
 # # alternatively, can call encode first, if you want to delay calling the solver methods, or for fine-grained
 # # performance profiling
@@ -99,8 +105,8 @@ checker4.encode()
 # # . . . do some other work . . . 
 # #
 # # also, can do these in separate threads more efficiently after encode() has been called.
-# checker.p_imp_q()
-# checker.q_imp_p()
+# checker.p_implies_q()
+# checker.q_implies_p()
 
 
 # Tests with the Z3Backend

@@ -39,6 +39,9 @@ class StandaloneWildcardMatching(BaseMatching):
     Then, the set of all http_verbs values would be: ["GET", "POST", "PUT", "DELETE", "*"]
     where "*" matched any other value.
     """
+
+    # StandaloneWildcardMatching is supported for enum types only while
+    # OneWildcardMatching is supported for String types only. 
     def __init__(self, wildcard_char="*") -> None:
         self.wildcard_char = wildcard_char
 
@@ -55,6 +58,7 @@ class OneWildcardMatching(BaseMatching):
     Then, unlike in the case of StandaloneWildcardMatching, the set of all http_verb values in this case would include values
     such as "P*", which would match both "POST" and "PUT".
     """
+    # TODO -- Not implemented for enum, only implemented for String
     def __init__(self, wildcard_char="*") -> None:
         self.wildcard_char = wildcard_char
 
@@ -63,16 +67,21 @@ class GlobMatching(BaseMatching):
     """
     Represents a matching strategy that utilizes Unix globs.
     """
-    pass
+    # pass
+    def __init__(self):
+        raise NotImplementedError
+    
 
 
 class ReMatching(BaseMatching):
     """
     Represents a matching strategy that utilizes regular expressions.
     """
-    pass
-
-
+    # TODO -- implement in the backends
+    # pass
+    def __init__(self):
+        raise NotImplementedError
+    
 
 # Character sets
 ALPHANUM_SET = set('abcdefghijklmnopqrstuvwxyz0123456789')
