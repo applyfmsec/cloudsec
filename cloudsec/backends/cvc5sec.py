@@ -27,12 +27,13 @@ class CVC5Backend(CloudsecBackend):
         self.string = self.slv.getStringSort()
         #return self.slv
 
-    def _create_bool_encoding(self, free_var:cvc5.Term, expr:Term)-> cvc5.Term:
+    def _create_bool_encoding(self, name, expr:Term)-> cvc5.Term:
         """
         Create a cvc5 boolean encoding of the expression, `expr`.
         using the free variable free_var (i.e., the name of the component).
         This should be the last method called when encoding a component.
         """
+        free_var = self._check_and_create_free_variable(name)
         term = self.slv.mkTerm(Kind.STRING_IN_REGEXP, free_var, expr)
         return term
 
@@ -56,7 +57,7 @@ class CVC5Backend(CloudsecBackend):
         term = self.slv.mkTerm(Kind.STRING_TO_REGEXP, self.slv.mkString(value))
         return term
 
-    def _encode_string_enum(self, string_enum_component_type, value, free_var):
+    def _encode_string_enum(self, string_enum_component_type, value):
         """
         Encodes a StringEnumComponent type into a cvc5 boolean expression.
 
@@ -65,7 +66,7 @@ class CVC5Backend(CloudsecBackend):
 
         """
         expr = self._get_string_enum_expr(string_enum_component_type, value)
-        return self._create_bool_encoding(free_var, expr)
+        return self._create_bool_encoding(string_enum_component_type.name, expr)
 
     def _get_string_expr(self, string_component_type, value):
         charset = string_component_type.char_set
@@ -111,7 +112,7 @@ class CVC5Backend(CloudsecBackend):
                                                                                  self.slv.mkString(part)))
         return result
 
-    def _encode_string(self, string_component_type, value, free_var):
+    def _encode_string(self, string_component_type, value):
         """
         Encodes a StringComponent type into a z3 boolean expression.
 
@@ -119,7 +120,7 @@ class CVC5Backend(CloudsecBackend):
         value: the data associated with the policy for this component.
         """
         expr = self._get_string_expr(string_component_type, value)
-        return self._create_bool_encoding(free_var, expr)
+        return self._create_bool_encoding(string_component_type.name, expr)
 
     def _encode_tuple_parts(self, tuple_component_type, value):
         res = []
@@ -136,16 +137,16 @@ class CVC5Backend(CloudsecBackend):
         term = self.slv.mkTerm(Kind.REGEXP_CONCAT, *res)
         return term
 
-    def _encode_tuple(self, tuple_component_type, value, free_var):
+    def _encode_tuple(self, tuple_component_type, value):
         """
         This implementation is the most similar to the string and enum implementations where it returns a single
         boolean encoding. This implementation has the problem that fields within the tuple get smashed together which
         can lead to false equivalences; for ex, p1 = (a2, cpsjstubbs) equals p2= (a2cps, jstubbs) in this impl.
         """
         expr = self._encode_tuple_parts(tuple_component_type, value)
-        return self._create_bool_encoding(free_var, expr)
+        return self._create_bool_encoding(tuple_component_type.name, expr)
 
-    def _encode_tuple_list(self, tuple_component_type, value, free_var):
+    def _encode_tuple_list(self, tuple_component_type, value):
         """
         This implementation returns a list of boolean encodings, an encoding for each field in the list. The encoding
         is over a free variable with name = {tuple_name}_{field_name}.
@@ -159,8 +160,8 @@ class CVC5Backend(CloudsecBackend):
                 result = self._get_string_expr(field, val)
             elif hasattr(field, "values"):
                 result = self._get_string_enum_expr(field, val)
-            #res.append(self._create_bool_encoding(f'{tuple_component_type.name}_{field.name}', result))
-            res.append(self._create_bool_encoding(free_var, result))
+            res.append(self._create_bool_encoding(f'{tuple_component_type.name}_{field.name}', result))
+
         return res
 
     def encode_policy_set(self, P):
@@ -180,26 +181,14 @@ class CVC5Backend(CloudsecBackend):
                 # set the is_allow_policy boolean based on it.
                 if policy_comp.name == 'decision':
                     continue
-                if len(self.free_variables) == 0:
-                    free_var = self.slv.mkConst(self.string, policy_comp.name)
-                    self.free_variables.append(free_var)
 
-                flag = False
-                for v in self.free_variables:
-                    if policy_comp.name == v.getSymbol():
-                        free_var = v
-                        flag = True
-                        break
-                if flag == False:
-                    free_var = self.slv.mkConst(self.string, policy_comp.name)
-                    self.free_variables.append(free_var)
                 # tuples have a `fields` attribute
                 if hasattr(policy_comp, 'fields'):
-                    component_encodings.extend(self._encode_tuple_list(policy_comp, policy_comp.data, free_var))
+                    component_encodings.extend(self._encode_tuple_list(policy_comp, policy_comp.data))
                 elif hasattr(component, 'values'):
-                    component_encodings.append(self._encode_string_enum(policy_comp, policy_comp.data, free_var))
+                    component_encodings.append(self._encode_string_enum(policy_comp, policy_comp.data))
                 elif hasattr(policy_comp, 'max_len') and hasattr(policy_comp, 'char_set'):
-                    component_encodings.append(self._encode_string(policy_comp, policy_comp.data, free_var))
+                    component_encodings.append(self._encode_string(policy_comp, policy_comp.data))
 
             if len(component_encodings) == 1:
                 final_result.append(component_encodings)
@@ -207,6 +196,23 @@ class CVC5Backend(CloudsecBackend):
                 final_result.append(self.slv.mkTerm(Kind.AND, *component_encodings))
 
         return final_result
+
+    def _check_and_create_free_variable(self, free_var_name):
+        if len(self.free_variables) == 0:
+            free_var = self.slv.mkConst(self.string, free_var_name)
+            self.free_variables.append(free_var)
+
+        flag = False
+
+        for v in self.free_variables:
+            if free_var_name == v.getSymbol():
+                free_var = v
+                flag = True
+                break
+        if flag == False:
+            free_var = self.slv.mkConst(self.string, free_var_name)
+            self.free_variables.append(free_var)
+        return free_var
 
     def combine_allow_deny_set_encodings(self, allow_match_list, deny_match_list):
         if len(allow_match_list) == 1:
@@ -223,7 +229,7 @@ class CVC5Backend(CloudsecBackend):
                     self.slv.mkTerm(Kind.NOT, deny_match_list[0]))
             else:
                 return self.slv.mkTerm(Kind.AND,
-                                       self.slv.mkTerm(Kind.OR, allow_or_term),
+                                        allow_or_term,
                                            self.slv.mkTerm(Kind.NOT,
                                                       self.slv.mkTerm(Kind.OR,*deny_match_list)))
     def encode(self):
@@ -242,8 +248,10 @@ class CVC5Backend(CloudsecBackend):
         self.Q = self.combine_allow_deny_set_encodings(self.q_allow_match_list, self.q_deny_match_list)
 
     def prove(self, statement_1, statement_2):
-        #return z3.prove(z3.Implies(statement_1, statement_2))
+        print("free variables list:", self.free_variables)
         stmt = self.slv.mkTerm(Kind.NOT, self.slv.mkTerm(Kind.IMPLIES, statement_1, statement_2))
+        #stmt = self.slv.mkTerm(Kind.IMPLIES, statement_1, statement_2)
+        print("\n statement:= ", stmt, "\n")
         result = self.slv.checkSatAssuming(stmt)
         if result.isUnsat():
             print(" Result is unsat. Hence, PROVED \n")
