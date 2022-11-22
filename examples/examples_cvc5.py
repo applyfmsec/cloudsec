@@ -1,11 +1,15 @@
 import sys
-sys.path.append('/home/cloudsec')
-sys.path.append('/home/cloudsec/cloudsec')
+#sys.path.append('/home/cloudsec')
+#sys.path.append('/home/cloudsec/cloudsec')
+sys.path.append('/Users/spadhy/Documents/z3prover/z3/cloudsec')
+sys.path.append('/Users/spadhy/Documents/z3prover/z3/cloudsec/cloudsec')
 
-import z3 
+import cvc5
+from cvc5 import Kind, Term, Solver
 from core import Policy, PolicyEquivalenceChecker
 from cloud import http_api_policy_type
 
+backend='cvc5'
 # Examples of policies
 p = Policy(policy_type=http_api_policy_type, 
            principal=("a2cps", "jstubbs"), 
@@ -19,13 +23,14 @@ q = Policy(policy_type=http_api_policy_type,
            action="*",
            decision="allow")
 
-# Note: p => q because every activity allowed by p is also allowed by q, i.e., p is less permissive than q. 
-# BUT q NOT=> p, because q allows activities that p does not (for example, any action other than GET on the
-# s2/home/jstubbs resource).
+# Note: p => q BUT q NOT=> p
 checker = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[p],
-                                  policy_set_q=[q])
+                                  policy_set_q=[q], backend=backend)
 
+checker.encode()
+checker.p_implies_q()
+checker.q_implies_p()
 
 a1 = Policy(policy_type=http_api_policy_type, 
            principal=("a2cps", "jstubbs"), 
@@ -39,11 +44,15 @@ a2 = Policy(policy_type=http_api_policy_type,
            action="PUT",
            decision="deny")
 
+
+
 a3 = Policy(policy_type=http_api_policy_type, 
            principal=("a2cps", "jstubbs"), 
            resource=("a2cps", "files", "s2/*"),
            action="POST",
            decision="deny")
+
+
 
 b1 = Policy(policy_type=http_api_policy_type, 
            principal=("a2cps", "jstubbs"), 
@@ -60,42 +69,38 @@ b2 = Policy(policy_type=http_api_policy_type,
 
 # Note: {b1, b2} => {a1, a2, a3}    but   {a1,a2,a3}  NOT=> {b1, b2}
 checker2 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
-                                  policy_set_p=[a1, a2, a3],
-                                  policy_set_q=[b1, b2])
+                                  policy_set_p=[a1,a2],
+                                  policy_set_q=[b1,b2],backend=backend)
 
 checker2.encode()
-
-c1 = Policy(policy_type=http_api_policy_type, 
+checker2.p_implies_q()
+c1 = Policy(policy_type=http_api_policy_type,
            principal=("a2cps", "jstubbs"), 
            resource=("a2cps", "files", "s2/home/jstubbs/a.out"),
            action="PUT",
            decision="allow")
 
 checker3 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
-                                  policy_set_p=[a1, a2],
-                                  policy_set_q=[c1])
-# note that p allows all actions other than PUT on the s2/home/jstubbs/* tree (e.g., the DELETE action), so 
-# p is not less permissve than q, and hence, p NOT=> q.
-
-# On the other hand, q allows PUT:s2/home/jstubbs/a.out but p does not because of a2 (deny PUT:s2/home/jstubbs/*)
-# Therefore, q is not less permissive that p, and hence, q NOT=> p here.
+                                  policy_set_p=[a1,a2],
+                                  policy_set_q=[c1],backend=backend)
 
 checker3.encode()
 
-# here, we add an additional deny policy (a3) to the p set, which means that q is still not less
-# permissive than p (and hence, q NOT=> p still).
-# However, p still allows some additional actions (e.g., DELETE) on the s2/home/jstubbs/* tree, so p is
-# is still not less permissive that q (and hence p NOT=> q still). 
+# note that with the old version of the code, checker3 would find the counter example for q => p
+# but checker4 would "prove" that q => p even though p actually had one *additional* deny in checker4 vs checker3, 
+# so if anything, q => p should be harder in checker4. the reason is because of a bug in the orignal code that "And"ed
+# all of the deny statements together (see line ~155 of z3sec.py)
+
 checker4 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[a1, a2, a3],
-                                  policy_set_q=[c1])
+                                  policy_set_q=[c1],backend=backend)
 
 checker4.encode()
 
 
 # # can call these solver methods directly; these in turn call "encode()" for the user
-# checker.p_implies_q()
-# checker.q_implies_p()
+# checker.p_imp_q()
+# checker.q_imp_p()
 
 # # alternatively, can call encode first, if you want to delay calling the solver methods, or for fine-grained
 # # performance profiling
@@ -104,13 +109,18 @@ checker4.encode()
 # # . . . do some other work . . . 
 # #
 # # also, can do these in separate threads more efficiently after encode() has been called.
-# checker.p_implies_q()
-# checker.q_implies_p()
+# checker.p_imp_q()
+# checker.q_imp_p()
 
+def sat_term(solver,term):
+    result = solver.slv.checkSatAssuming(term)
+    if result.isSat() == True:
+        return True
+    return False
 
-# Tests with the Z3Backend
-from backends.z3sec import Z3Backend
-solver = Z3Backend(http_api_policy_type, [a1, a2], [b1])
+# Tests with the CVC5Backend
+from backends.cvc5sec import CVC5Backend
+solver = CVC5Backend(http_api_policy_type, [a1, a2], [b1])
 solver._encode_string_enum(a1.components.resource.fields[0], a1.components.resource.data[0])
 solver._encode_string_enum(a1.components.resource.fields[1], a1.components.resource.data[1])
 solver._encode_string_enum(p.components.action, p.components.action.data)
@@ -121,11 +131,15 @@ expr = solver._encode_tuple_parts(a1.components.resource, a1.components.resource
 real_value = ["a2cps", "files", "s2/home/jstubbs/foo"]
 # have to conver the real value into a z3 re as well; to do that, first convert each python string to a z3.StringVal and
 # then concat them all together using z3.Concat
-real_val_expr = z3.Concat( *[z3.StringVal(v) for v in real_value])
+#real_val_expr = z3.Concat( *[z3.StringVal(v) for v in real_value])
 
+p = [solver.slv.mkString(v) for v in real_value]
+real_val_expr = solver.slv.mkTerm(Kind.STRING_CONCAT, *p)
+print(type(real_val_expr))
 # here, we ask, "is the real_val_expr in the policy expr? (answer is Yes because policy included a wildcard)
-z3.simplify(z3.InRe(real_val_expr, expr))
 
+term_value = sat_term(solver, solver.slv.mkTerm(Kind.STRING_IN_REGEXP, real_val_expr, expr))
+print("term_value: ", term_value)
 # note -- this throws an exception because the data type for the 3rd field in the resource component 
 # is incorrect
 try:
@@ -163,6 +177,6 @@ s = Policy(policy_type=http_api_policy_type,
 
 checker5 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[r],
-                                  policy_set_q=[s])
+                                  policy_set_q=[s], backend=backend)
 
 checker5.encode()

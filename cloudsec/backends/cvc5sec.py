@@ -4,7 +4,7 @@ A cloudsec backend based on the cvc5 SMT solver.
 
 import cvc5
 from cvc5 import Kind, Term, Solver
-from cloudsec.backends import CloudsecBackend
+from cloudsec.backends import CloudsecBackend, ImplResult
 
 
 class CVC5Backend(CloudsecBackend):
@@ -103,7 +103,7 @@ class CVC5Backend(CloudsecBackend):
                 if idx == 0:
                     return result
 
-                return self.slv.mkTerm(Kind.REGEXP_CONCAT, result, self.z_all_vals_re_ref)
+                return self.slv.mkTerm(Kind.REGEXP_CONCAT, result, z_all_vals_re_ref)
             # handle whether this is the final part or not:
             if idx + 2 == len(parts):
                 return self.slv.mkTerm(Kind.REGEXP_CONCAT,result, self.slv.mkTerm(Kind.STRING_TO_REGEXP,
@@ -247,32 +247,54 @@ class CVC5Backend(CloudsecBackend):
         self.q_deny_match_list = self.encode_policy_set(self.q_deny_set)
         self.Q = self.combine_allow_deny_set_encodings(self.q_allow_match_list, self.q_deny_match_list)
 
-    def prove(self, statement_1, statement_2):
+    def prove(self, statement_1, statement_2) -> ImplResult:
         print("free variables list:", self.free_variables)
         stmt = self.slv.mkTerm(Kind.NOT, self.slv.mkTerm(Kind.IMPLIES, statement_1, statement_2))
         #stmt = self.slv.mkTerm(Kind.IMPLIES, statement_1, statement_2)
         print("\n statement:= ", stmt, "\n")
         result = self.slv.checkSatAssuming(stmt)
+        proved = False
+        found_counter_ex = True
+        model = []
         if result.isUnsat():
-            print(" Result is unsat. Hence, PROVED \n")
+            #print(" Result is unsat. Hence, PROVED \n")
+            proved = True
+            found_counter_ex = False
         elif result.isSat():
             print(" Result is sat. ")
             print(" counterexample")
             for fvar in self.free_variables:
-                print("\n", fvar.getSymbol(), "= ", self.slv.getValue(fvar))
-
+                #print("\n", fvar.getSymbol(), "= ", self.slv.getValue(fvar))
+                model.append((fvar.getSymbol(),self.slv.getValue(fvar)))
         else:
-            print(" ------ Unknown  ----- ")
-        return result
+            #print(" ------ Unknown  ----- ")
+            found_counter_ex = False
+            for fvar in self.free_variables:
+                print("\n", fvar.getSymbol(), "= ", self.slv.getValue(fvar))
+                model.append((fvar.getSymbol(), self.slv.getValue(fvar)))
 
-    def p_implies_q(self):
+        impl_result = ImplResult(proved=proved, found_counter_ex=found_counter_ex, model=model)
+        return impl_result
+
+
+    def p_implies_q(self) -> ImplResult:
         print("\n Prove p => q ")
         result = self.prove(self.P, self.Q)
-        print("\n Summary: p => q result: ", result)
+        print("\n Summary: p => q result: \n")
+        print("proved: ", result.proved)
+        if not result.proved :
+            print("found counter example: ", result.found_counter_ex)
+            if result.found_counter_ex:
+                print("counter-example : ", result.model)
         return result
 
-    def q_implies_p(self):
+    def q_implies_p(self) -> ImplResult:
         print("\n Prove q => p : ")
         result = self.prove(self.Q, self.P)
-        print("\n Summary: q => p: ", result)
+        print("\n Summary: q => p result: \n")
+        print("proved: ", result.proved)
+        if not result.proved:
+            print("found counter example: ", result.found_counter_ex)
+            if result.found_counter_ex:
+                print("counter-example : ", result.model)
         return result
