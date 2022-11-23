@@ -151,5 +151,36 @@ def test_z3_policy_checker_1(capsys):
     # the model should contain the counter example
     assert result.model is not None
 
+def test_cvc5_policy_checker_1(capsys):
+    # make two sets of policies of type `test_policy_type` and
+    # use the z3 backend to test permissiveness
+    test_policy_type = get_test_policy_type()
+    p = Policy(policy_type=test_policy_type,
+               path="/home/jstubbs/*",
+               test_tuple=("val1", "mystr"),
+               decision="allow")
+    q1 = Policy(policy_type=test_policy_type,
+                path="/home/jstubbs/a.out",
+                test_tuple=("val1", "mystr"),
+                decision="allow")
+    q2 = Policy(policy_type=test_policy_type,
+                path="/home/jstubbs/b.out",
+                test_tuple=("val1", "mystr"),
+                decision="allow")
+    checker = PolicyEquivalenceChecker(policy_type=test_policy_type,
+                                  policy_set_p=[p],
+                                  policy_set_q=[q1, q2],
+                                  backend='cvc5')
+    checker.encode()
+    # note: q => p since p is more permissive.
+    result = checker.q_implies_p()
+    assert result.proved
+    assert not result.found_counter_ex
+    # note: p does not imply q since p is strictly more permissive.
+    result = checker.p_implies_q()
+    assert not result.proved
+    assert result.found_counter_ex
+    # the model should contain the counter example
+    assert result.model is not None
                                 
        
