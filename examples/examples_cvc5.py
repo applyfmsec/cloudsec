@@ -1,6 +1,6 @@
 import sys
-#sys.path.append('/home/cloudsec')
-#sys.path.append('/home/cloudsec/cloudsec')
+sys.path.append('/home/cloudsec')
+sys.path.append('/home/cloudsec/cloudsec')
 
 import cvc5
 from cvc5 import Kind, Term, Solver
