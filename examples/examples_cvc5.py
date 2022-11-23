@@ -1,8 +1,6 @@
 import sys
 #sys.path.append('/home/cloudsec')
 #sys.path.append('/home/cloudsec/cloudsec')
-sys.path.append('/Users/spadhy/Documents/z3prover/z3/cloudsec')
-sys.path.append('/Users/spadhy/Documents/z3prover/z3/cloudsec/cloudsec')
 
 import cvc5
 from cvc5 import Kind, Term, Solver
@@ -73,7 +71,7 @@ checker2 = PolicyEquivalenceChecker(policy_type=http_api_policy_type,
                                   policy_set_q=[b1,b2],backend=backend)
 
 checker2.encode()
-checker2.p_implies_q()
+
 c1 = Policy(policy_type=http_api_policy_type,
            principal=("a2cps", "jstubbs"), 
            resource=("a2cps", "files", "s2/home/jstubbs/a.out"),
