@@ -1,15 +1,20 @@
-# Image: jstubbs/cloudsec-tests
+# Image: jstubbs/cloudsec-tests-perf
 
 FROM jstubbs/cloudsec
 
 
 USER root
 COPY requirements-tests.txt .
+COPY requirements-perf.txt .
+RUN pip install --upgrade pip
 RUN python -m pip install -r requirements-tests.txt
+RUN python -m pip install -r requirements-perf.txt
+
 
 USER cloudsec
 COPY tests/__init__.py  /home/cloudsec/tests/__init__.py
 COPY tests/test_* /home/cloudsec/tests/
+COPY tests-performance/test_* /home/cloudsec/tests-performance/
 
 COPY examples /home/cloudsec/examples
 WORKDIR /home/cloudsec

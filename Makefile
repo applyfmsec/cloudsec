@@ -7,7 +7,10 @@ build-exs: build-core
 build-tests: build-core
 	docker build -t jstubbs/cloudsec-tests -f Dockerfile-tests .
 
-build: build-core build-exs build-tests
+build-perf: build-core
+	docker build -t jstubbs/cloudsec-tests-perf -f Dockerfile-perf .
+
+build: build-core build-exs build-tests build-perf
 
 test: build-tests
 	docker run -it --rm jstubbs/cloudsec-tests
