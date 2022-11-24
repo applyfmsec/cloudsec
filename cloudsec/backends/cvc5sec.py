@@ -25,7 +25,7 @@ class CVC5Backend(CloudsecBackend):
         self.slv.setOption("output-language", "smt2")
         self.slv.setOption("produce-unsat-cores", "true")
         self.string = self.slv.getStringSort()
-        #return self.slv
+        
 
     def _create_bool_encoding(self, name, expr:Term)-> cvc5.Term:
         """
@@ -191,7 +191,7 @@ class CVC5Backend(CloudsecBackend):
                     component_encodings.append(self._encode_string(policy_comp, policy_comp.data))
 
             if len(component_encodings) == 1:
-                final_result.append(component_encodings)
+                final_result.append(component_encodings[0])
             else:
                 final_result.append(self.slv.mkTerm(Kind.AND, *component_encodings))
 
@@ -218,6 +218,7 @@ class CVC5Backend(CloudsecBackend):
         if len(allow_match_list) == 1:
             allow_or_term = allow_match_list[0]
         else:
+            #print("allow match list type ", type(allow_match_list), "list = ", allow_match_list,  " size:",  len(allow_match_list))
             allow_or_term = self.slv.mkTerm(Kind.OR, *allow_match_list)
         if len(deny_match_list) == 0:
            return allow_or_term
@@ -250,21 +251,16 @@ class CVC5Backend(CloudsecBackend):
     def prove(self, statement_1, statement_2) -> ImplResult:
         print("free variables list:", self.free_variables)
         stmt = self.slv.mkTerm(Kind.NOT, self.slv.mkTerm(Kind.IMPLIES, statement_1, statement_2))
-        #stmt = self.slv.mkTerm(Kind.IMPLIES, statement_1, statement_2)
-        print("\n statement:= ", stmt, "\n")
+        #print("\n statement:= ", stmt, "\n")
         result = self.slv.checkSatAssuming(stmt)
         proved = False
         found_counter_ex = True
         model = []
         if result.isUnsat():
-            #print(" Result is unsat. Hence, PROVED \n")
             proved = True
             found_counter_ex = False
         elif result.isSat():
-            print(" Result is sat. ")
-            print(" counterexample")
             for fvar in self.free_variables:
-                #print("\n", fvar.getSymbol(), "= ", self.slv.getValue(fvar))
                 model.append((fvar.getSymbol(),self.slv.getValue(fvar)))
         else:
             #print(" ------ Unknown  ----- ")

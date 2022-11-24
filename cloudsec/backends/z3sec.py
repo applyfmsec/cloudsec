@@ -221,7 +221,7 @@ class Z3Backend(CloudsecBackend):
             found_counter_ex = False
         elif result == z3.unknown:
             found_counter_ex = False
-            model = solver.model()
+            #model = solver.model()
         else:
             # in this case we did not prove the statement but in fact found a coutner example.
             model = solver.model()
