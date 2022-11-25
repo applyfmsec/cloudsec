@@ -1,6 +1,4 @@
-import os
 import sys
-
 import pytest
 
 # Add the cloudsec package directory to the python path so that 
@@ -119,7 +117,7 @@ def test_policy():
     assert p.components.decision.data == "allow"
 
 
-def test_z3_policy_checker_1(capsys):
+def test_z3_policy_checker_1():
     # make two sets of policies of type `test_policy_type` and
     # use the z3 backend to test permissiveness 
     test_policy_type = get_test_policy_type()    
@@ -151,7 +149,8 @@ def test_z3_policy_checker_1(capsys):
     # the model should contain the counter example
     assert result.model is not None
 
-def test_cvc5_policy_checker_1(capsys):
+
+def test_cvc5_policy_checker_1():
     # make two sets of policies of type `test_policy_type` and
     # use the z3 backend to test permissiveness
     test_policy_type = get_test_policy_type()
