@@ -29,7 +29,7 @@ action = StringEnumComponent(name="action",
 
 http_api_policy_type = PolicyType(components=[principal, resource, action])
 
-level = StringEnumComponent(name="action", 
+level = StringEnumComponent(name="level", 
                              values=["read", "execute", "write"], 
                              matching_type=one_wildcard_matching)
 
