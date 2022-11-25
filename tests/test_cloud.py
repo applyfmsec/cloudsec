@@ -431,3 +431,38 @@ def test_tapis_policy_set_8_cvc5():
     assert not result.found_counter_ex
     assert not result.model
 
+def get_policy_sets_9():
+    # use the P policy set from 4 but change the Q policy set
+    P, _ = get_policy_sets_4()
+    # check that a different service ("systems") doesn't match
+    v1 = Policy(policy_type=tapis_policy_type, 
+           principal=("a2cps", "jsmith"), 
+           resource=("a2cps", "systems", "s2/home/jstubbs/readme.md"),
+           level="read",
+           decision="allow")
+    return P, [v1]
+
+def test_tapis_policy_set_9_z3():
+    P, Q = get_policy_sets_9()
+    checker = PolicyEquivalenceChecker(policy_type=tapis_policy_type, 
+                                  policy_set_p=P,
+                                  policy_set_q=Q,
+                                  backend='z3')
+    checker.encode()
+    result = checker.q_implies_p()
+    assert not result.proved
+    assert result.found_counter_ex
+    assert result.model
+
+
+def test_tapis_policy_set_9_cvc5():
+    P, Q = get_policy_sets_9()
+    checker = PolicyEquivalenceChecker(policy_type=tapis_policy_type, 
+                                  policy_set_p=P,
+                                  policy_set_q=Q,
+                                  backend='cvc5')
+    checker.encode()
+    result = checker.q_implies_p()
+    assert not result.proved
+    assert result.found_counter_ex
+    assert result.model
