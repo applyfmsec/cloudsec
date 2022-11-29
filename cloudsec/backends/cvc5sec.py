@@ -25,7 +25,7 @@ class CVC5Backend(CloudsecBackend):
         self.slv.setOption("output-language", "smt2")
         self.slv.setOption("produce-unsat-cores", "true")
         self.string = self.slv.getStringSort()
-        
+
 
     def _create_bool_encoding(self, name, expr:Term)-> cvc5.Term:
         """
@@ -215,15 +215,22 @@ class CVC5Backend(CloudsecBackend):
         return free_var
 
     def combine_allow_deny_set_encodings(self, allow_match_list, deny_match_list):
+
+        if len(allow_match_list) == 0:
+            if len(deny_match_list) == 1:
+                return self.slv.mkTerm(Kind.NOT, deny_match_list[0])
+            else:
+                return self.slv.mkTerm(Kind.NOT, self.slv.mkTerm(Kind.OR,*deny_match_list))
+
         if len(allow_match_list) == 1:
             allow_or_term = allow_match_list[0]
         else:
-            #print("allow match list type ", type(allow_match_list), "list = ", allow_match_list,  " size:",  len(allow_match_list))
             allow_or_term = self.slv.mkTerm(Kind.OR, *allow_match_list)
+
+
         if len(deny_match_list) == 0:
            return allow_or_term
         else:
-
             if len(deny_match_list) == 1:
                 return self.slv.mkTerm(Kind.AND,
                     allow_or_term,
@@ -249,9 +256,9 @@ class CVC5Backend(CloudsecBackend):
         self.Q = self.combine_allow_deny_set_encodings(self.q_allow_match_list, self.q_deny_match_list)
 
     def prove(self, statement_1, statement_2) -> ImplResult:
-        print("free variables list:", self.free_variables)
+        # print("free variables list:", self.free_variables)
         stmt = self.slv.mkTerm(Kind.NOT, self.slv.mkTerm(Kind.IMPLIES, statement_1, statement_2))
-        #print("\n statement:= ", stmt, "\n")
+        # print("\n statement:= ", stmt, "\n")
         result = self.slv.checkSatAssuming(stmt)
         proved = False
         found_counter_ex = True
