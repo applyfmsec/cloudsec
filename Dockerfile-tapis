@@ -1,0 +1,23 @@
+# Image: jstubbs/cloudsec-tapis
+
+FROM jstubbs/cloudsec-tests
+
+USER root
+RUN pip install --upgrade pip
+RUN pip install tapipy ipython
+
+USER cloudsec
+USER cloudsec
+COPY connectors  /home/cloudsec/connectors
+
+WORKDIR /home/cloudsec
+USER root
+RUN chown -R cloudsec:cloudsec /home/cloudsec
+USER cloudsec
+
+WORKDIR /home/cloudsec/connectors
+ENV TAPIS_INPUT='{"users": ["testuser2"], "tenant_id": "dev"}'
+ENV TAPIS_JWT="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJqdGkiOiJkZmQ3MjM4YS1mN2Y2LTQyNmMtOTAxYS1kMDVjOTE4NjBkMzAiLCJpc3MiOiJodHRwczovL2Rldi5kZXZlbG9wLnRhcGlzLmlvL3YzL3Rva2VucyIsInN1YiI6InRlc3R1c2VyMkBkZXYiLCJ0YXBpcy90ZW5hbnRfaWQiOiJkZXYiLCJ0YXBpcy90b2tlbl90eXBlIjoiYWNjZXNzIiwidGFwaXMvZGVsZWdhdGlvbiI6ZmFsc2UsInRhcGlzL2RlbGVnYXRpb25fc3ViIjpudWxsLCJ0YXBpcy91c2VybmFtZSI6InRlc3R1c2VyMiIsInRhcGlzL2FjY291bnRfdHlwZSI6InVzZXIiLCJleHAiOjExNjcwMDE2NzYyfQ.UlX62WLVTdtVwgo_HYPNc_PLnCO4eYImfl3BByLyXkJzBtm-mivXsZ72rBY3B_57F3ogXtj12zNoaw2WOo1nrx41nA_5PdtU-PK3b6cskEMPxetT-U2rTXT67oJOpH1BF5Yvy48tnjloKLOhESLp-vBF6LEdMypNUHJAaSFwN_xL1rFwJdKMQ29D0oGRXOprM6UewgzX6YwTBcEsceEhphhEKM7de2KiSi66pDlIbDAB6O8XsrD9Rqb_20Oxp3Nrfs3bMulZvcus8I6n5U_gR9vwkAH7AkDymawk3F5eHjpw2yYgqiC75TV82_IfLlTVjGkTDVA3P75moQooygo3tQ"
+ENTRYPOINT ["python", "tapisfiles.py"]
+
+

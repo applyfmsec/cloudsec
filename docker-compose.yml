@@ -1,0 +1,15 @@
+version: "3.5"
+
+services:
+  tapis:
+    image: jstubbs/cloudsec-tapis
+    environment:
+    # Uncomment one of the following ----
+    # --- run for just one user ---
+    # TAPIS_INPUT: '{"users": ["testuser3"], "tenant_id": "dev"}'
+    # --- run for several users --- 
+      # TAPIS_INPUT: '{"users": ["testuser2", "testuser3", "testuser4"], "tenant_id": "dev"}'
+    # --- run for all users ---
+      TAPIS_INPUT: '{"users": ["*"], "tenant_id": "dev"}'
+
+      

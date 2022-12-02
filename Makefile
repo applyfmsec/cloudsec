@@ -1,6 +1,9 @@
 build-core:
 	docker build -t jstubbs/cloudsec .
 
+build-tapis:
+	docker build -t jstubbs/cloudsec-tapis -f Dockerfile-tapis .
+
 build-exs: build-core
 	docker build -t jstubbs/cloudsec-exs -f Dockerfile-exs .
 
