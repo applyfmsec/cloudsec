@@ -180,6 +180,9 @@ class Z3Backend(CloudsecBackend):
         if len(deny_match_list) == 0:
             return z3.Or(*allow_match_list)
         else:
+            if len(allow_match_list) == 0:
+                return z3.Not(z3.Or(*deny_match_list))
+
             return z3.And(z3.Or(*allow_match_list), z3.Not(z3.Or(*deny_match_list)))
 
 
@@ -208,6 +211,7 @@ class Z3Backend(CloudsecBackend):
         # We add the negation of the statement we are trying to prove and check if it is unsatisfiable, 
         # meaning that the original implication is true
         solver.add(z3.Not(z3.Implies(statement_1, statement_2)))
+        #print(solver.sexpr())
         result = solver.check()
         # whether we were able to prove the statement. There are 3 possibilities:
         #  a) we are able to prove the statement
