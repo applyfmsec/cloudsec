@@ -84,9 +84,9 @@ class ReMatching(BaseMatching):
     
 
 # Character sets
-ALPHANUM_SET = set('abcdefghijklmnopqrstuvwxyz0123456789')
+ALPHANUM_SET = set('abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-_.:')
 
-PATH_CHAR_SET = set('abcdefghijklmnopqrstuvwxyz0123456789_/.:')
+PATH_CHAR_SET = set('abcdefghijklmnopqrstuvwxyz0123456789_/.:ABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
 
 # Compontent Types
