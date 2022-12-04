@@ -11,7 +11,7 @@ USER cloudsec
 COPY tests/__init__.py  /home/cloudsec/tests/__init__.py
 COPY tests/test_* /home/cloudsec/tests/
 
-COPY examples /home/cloudsec/examples
+# COPY examples /home/cloudsec/examples
 WORKDIR /home/cloudsec
 USER root
 RUN chown -R cloudsec:cloudsec /home/cloudsec

@@ -1,6 +1,6 @@
 # Image: jstubbs/cloudsec-exs
 
-from jstubbs/cloudsec
+FROM jstubbs/cloudsec-tapis
 
 COPY examples /home/cloudsec/examples
 
