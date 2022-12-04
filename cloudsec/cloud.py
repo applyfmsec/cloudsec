@@ -32,14 +32,22 @@ http_api_policy_type = PolicyType(components=[principal, resource, action])
 
 
 level = StringEnumComponent(name="level", 
-                             values=["read", "execute", "modify"], 
-                             matching_type=one_wildcard_matching)
+                            values=["read", "execute", "modify"], 
+                            matching_type=one_wildcard_matching)
+tapis_tenant = StringEnumComponent(name="tenant_id", 
+                                   values=set(["a2cps", "cyverse", "dev", "vdj"]), 
+                                   matching_type=exact_matching_type)
+tapis_principal = TupleComponent(name="principal", fields=[tapis_tenant, username])
+tapis_policy_type = PolicyType(components=[tapis_principal, resource, level])
 
 
-tapis_tenant = StringEnumComponent(name="tenant_id", values=set(["a2cps", "cyverse", "dev", "vdj"]), matching_type=exact_matching_type)
 tapis_system_id = StringComponent(name="system_id", char_set=ALPHANUM_SET, max_len=25, matching_type=one_wildcard_matching)
-tapis_file_perm = TupleComponent(name='file_perm', fields=[tapis_tenant, tapis_system_id, path])
+tapis_files_perms_level = StringEnumComponent(name="level", 
+                                              values=["READ", "MODIFY"], 
+                                              matching_type=one_wildcard_matching)
+tapis_file_perm = TupleComponent(name='file_perm', fields=[tapis_tenant, tapis_system_id, tapis_files_perms_level, path])
 
-tapis_policy_type = PolicyType(components=[principal, resource, level])
 
-tapis_files_policy_type = PolicyType(components=[principal, tapis_file_perm])
+
+
+tapis_files_policy_type = PolicyType(components=[tapis_principal, tapis_file_perm])
