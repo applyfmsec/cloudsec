@@ -6,6 +6,7 @@ import timeit
 
 # Add the cloudsec package directory to the python path so that
 # the tests can run easily from within the tests Docker container
+sys.path.append('/home/cloudsec')
 sys.path.append('/home/cloudsec/cloudsec')
 print(f"Python path: {sys.path}")
 
@@ -56,9 +57,9 @@ def load_string_wild_card_policies(n: int, backend):
 
 def test_measure_string_wc(ns=[2], filename= 'string_re_wc_results.csv',test_reps=4, backend='cvc5'):
     result = {}
-    with open(filename, 'w') as f:
-        f.write('StringRe Wildcard Test\n')
-        f.write('n, Data Load, SMT Encoding, P => Q\n')
+    with open(filename, 'a') as f:
+        #f.write('StringRe Wildcard Test\n')
+        #f.write('n, Data Load, SMT Encoding, P => Q\n')
         for n in ns:
             result[n] = []
             for i in range(test_reps):
@@ -108,11 +109,11 @@ def load_enum_policies(n: int, backend):
     ts_smt = ts_4 - ts_3
     return policy_p, policy_q, ts_dataload, ts_smt, checker
 
-def measure_enum(ns=[10, 100, 1000], filename='enum_results.csv', test_reps=4, backend='cvc5'):
+def test_measure_enum(ns=[10, 100, 1000], filename='enum_results.csv', test_reps=4, backend='cvc5'):
     result = {}
-    with open(filename, 'w') as f:
-        f.write('Enum Test\n')
-        f.write('n, Data Load, SMT Encoding, P => Q, Q => P\n')
+    with open(filename, 'a') as f:
+        #f.write('Enum Test\n')
+        #f.write('n, Data Load, SMT Encoding, P => Q, Q => P\n')
         for n in ns:
             result[n] = []
             for i in range(test_reps):
@@ -127,5 +128,18 @@ def measure_enum(ns=[10, 100, 1000], filename='enum_results.csv', test_reps=4, b
                 result[n].append(new_times)
                 f.write(f"{n}, {new_times['data_load']}, {new_times['smt_encoding']}, {new_times['p_imp_q']}, {new_times['q_imp_p']}\n")
     return result
-#test_measure_string_wc(ns=[2], filename='string_re_wc_results_10_1000.csv',test_reps=4, backend='cvc5')
-#measure_string_wc(ns=[1000 * i for i in range(2, 26)], filename='string_re_wc_results_1000_25k.csv', test_reps=4)
+
+# test_measure_enum(ns=[10], filename='enum_results_cvc5.csv', test_reps=4, backend='cvc5')
+# test_measure_enum(ns=[10+(30*i) for i in range(34)], filename='enum_results_cvc5.csv', test_reps=4, backend='cvc5')
+# test_measure_enum(ns=[1500, 2000, 3000, 4000, 5000, 6000, 7000, 8000], filename='enum_results_cvc5.csv', test_reps=4, backend='cvc5')
+#
+# test_measure_enum(ns=[10], filename='enum_results_z3.csv', test_reps=4, backend='z3')
+# test_measure_enum(ns=[10+(30*i) for i in range(34)], filename='enum_results_z3.csv', test_reps=4, backend='z3')
+# test_measure_enum(ns=[1500, 2000, 3000, 4000], filename='enum_results_z3.csv', test_reps=4, backend='z3')
+#
+# test_measure_string_wc(ns=[10],filename='string_wc_results_cvc5.csv',test_reps=4, backend='cvc5')
+# test_measure_string_wc(ns=[10+(30*i) for i in range(34)],filename='string_wc_results_cvc5.csv',test_reps=4, backend='cvc5')
+#
+# test_measure_string_wc(ns=[10],filename='string_wc_results_z3.csv',test_reps=4, backend='z3')
+# test_measure_string_wc(ns=[10+(30*i) for i in range(34)],filename='string_wc_results_z3.csv',test_reps=4, backend='z3')
+# test_measure_string_wc(ns=[1500, 2000, 2500, 3000],filename='string_wc_results_z3.csv',test_reps=4, backend='z3')
