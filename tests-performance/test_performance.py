@@ -71,6 +71,8 @@ def test_measure_string_wc(ns=[2], filename= 'string_re_wc_results.csv',test_rep
                 new_times = {'data_load': ts_dataload, 'smt_encoding': ts_smt,'p_imp_q': ts_3 - ts_2}
                 result[n].append(new_times)
                 f.write(f"{n}, {new_times['data_load']}, {new_times['smt_encoding']}, {new_times['p_imp_q']}\n")
+                f.flush()
+                os.fsync(f.fileno())
     return result
 
 def get_dynamic_enum_policy_type(N:int):
