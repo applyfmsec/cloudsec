@@ -130,8 +130,8 @@ def test_basic():
 
 def generate_scenario_1():
     """
-    This function can be called to create the systems and permissions for a first scenario where systems
-    and files permissions are created for a set of users.
+    This scenario creates 1046 paths and 5287 permissions across 1 system and 8 users.
+
     """
     # these are the users in our scenario
     users = {"scientists": ["test_scientist_1", "test_scientist_2"],
@@ -141,7 +141,7 @@ def generate_scenario_1():
              "public": ["test_jq_public_1", "test_jq_public_2"],
     }
     # we have 1 system in this scenario
-    # scientist_1 owns the system but scientst_2 also works on it.
+    # scientist_1 owns the system but scientist_2 also works on it.
     systems = [
         {"system_name": "zz-scenario1", 
           "root_dir": "/",
@@ -152,7 +152,80 @@ def generate_scenario_1():
         #   "root_dir": "/corral-repl/projects/scenario1",
         #   "owner": "test_scientist_2",
     ]
-    # each system has a /code, /data and a /results tree. 
+
+    # source code files --
+    num_libs = 5
+    num_source_files = 16
+    num_lib_files = 31
+
+    # data files ---
+    num_data_dirs = 11
+    num_tcl_files = 11
+    num_input_pngs = 21
+    
+    # output files -- 
+    num_csv_files = 6
+    num_output_pngs = 31
+    generate_scenario(users, systems, num_libs, num_source_files, num_lib_files, num_data_dirs, 
+                      num_tcl_files, num_input_pngs, num_csv_files, num_output_pngs)
+# Total paths: 1046
+# Total permissions added: 5287
+
+
+def generate_scenario_2():
+    """
+    This scenario creates  paths and 5287 permissions across 1 system and 5 users.
+
+    """
+    # these are the users in our scenario
+    users = {"scientists": ["test2_scientist_1",],
+             "developers": ["test2_developer_1",],
+             "project_managers": ["test2_project_manager"],
+             "collaborators": ["test2_project_collab_1"],
+             "public": ["test2_jq_public_1"],
+    }
+    # we have 1 system in this scenario
+    systems = [
+        {"system_name": "zz-scenario2", 
+          "root_dir": "/",
+          "owner": "test2_scientist_1",
+        },
+    ]
+
+    # source code files --
+    num_libs = 2
+    num_source_files = 6
+    num_lib_files = 4
+
+    # data files ---
+    num_data_dirs = 3
+    num_tcl_files = 6
+    num_input_pngs = 6
+    
+    # output files -- 
+    num_csv_files = 3
+    num_output_pngs = 2
+    generate_scenario(users, systems, num_libs, num_source_files, num_lib_files, num_data_dirs, 
+                      num_tcl_files, num_input_pngs, num_csv_files, num_output_pngs)
+# Total paths: 70
+# Total permissions added: 178
+
+
+def generate_scenario(users, 
+                      systems,
+                      num_libs, 
+                      num_source_files, 
+                      num_lib_files, 
+                      num_data_dirs, 
+                      num_tcl_files, 
+                      num_input_pngs, 
+                      num_csv_files, 
+                      num_output_pngs):
+    """
+    Generic function that can be called to create the systems and permissions objects for a scenario where systems
+    and files permissions are created for a set of users.
+    """
+    # Each system has a /code, /data and a /results tree. 
     # /code is available to the scientists, the developers (READ and MODIFY) and the collaborators (READ only)
     #   - /python has .py files
     #   - /java has .java files
@@ -174,30 +247,27 @@ def generate_scenario_1():
     #   - /runN
     paths = ['/code/python', '/code/java']
     
-    num_libs = 5
     paths.extend([f"/code/python/lib_{i}" for i in range(1, num_libs + 1)])
     paths.extend([f"/code/java/lib_{i}" for i in range(1, num_libs + 1)])
     
-    num_source_files = 16
     paths.extend([f"/code/python/source_{j}.py" for j in range(1, num_source_files + 1)])
     paths.extend([f"/code/java/source_{j}.java" for j in range(1, num_source_files + 1)])
-    num_lib_files = 31
+    
     paths.extend([f"/code/python/lib_{i}/source_{j}.py" for i in range(1, num_libs + 1) for j in range(1, num_lib_files + 1)])
     paths.extend([f"/code/java/lib_{i}/source_{j}.java" for i in range(1, num_libs + 1) for j in range(1, num_lib_files + 1)])
 
-    num_data_dirs = 11
     paths.append('/data')
     paths.extend([f'/data/data_{i}' for i in range(1, num_data_dirs)])
-    num_tcl_files = 11
+    
     paths.extend([f'/data/data_{i}/input_{j}.tcl' for i in range(1, num_data_dirs) for j in range(1, num_tcl_files)])
-    num_input_pngs = 21
+    
     paths.extend([f'/data/data_{i}/input_{j}.png' for i in range(1, num_data_dirs) for j in range(1, num_input_pngs)])
 
     paths.append('/results')
     paths.extend([f'/results/run_{i}' for i in range(1, num_data_dirs)])
-    num_csv_files = 6
+    
     paths.extend([f'/results/run_{i}/output_{j}.csv' for i in range(1, num_data_dirs) for j in range(1, num_csv_files + 1)])
-    num_output_pngs = 31
+    
     paths.extend([f'/results/run_{i}/output_{j}.png' for i in range(1, num_data_dirs) for j in range(1, num_output_pngs + 1)])
 
     # Add all of the Tapis objects for this scenario 
@@ -260,8 +330,6 @@ def generate_scenario_1():
     
     print(f"Total paths: {len(paths)}")
     print(f"Total permissions added: {total_permissions}")
-# Total paths: 1046
-# Total permissions added: 5287
 
 
 def test_scenario_1():
@@ -294,7 +362,7 @@ def test_scenario_1():
             file_perm=('dev', 'zz-scenario1', '*', '/results/*'), 
             decision='allow')
 
-    ch = PolicyEquivalenceChecker(policy_type=tapis_files_policy_type, policy_set_p=policies, policy_set_q=[q1,q2,q3])
+    ch = PolicyEquivalenceChecker(policy_type=tapis_files_policy_type, policy_set_p=policies, policy_set_q=[q1,q2,q3], backend='cvc5')
     ch.encode()
     # Q has just the one allow policy which is a special case of one of the P allow policies, so Q=>P is clear:
     # result = ch.q_implies_p()
@@ -302,3 +370,59 @@ def test_scenario_1():
     return access_tokens, user_clients, perms_dict, policies, ch
 
 # access_tokens, user_clients, perms_dict, policies, ch = test_scenario_1()
+
+
+
+def test_scenario_2():
+    users = ["test2_scientist_1", "test2_developer_1", "test2_project_manager"]
+    access_tokens = {}
+    user_clients = {}
+    perms_dict = {}
+    for user in users:
+        access_tokens[user] = get_access_token_for_user(username=user)
+        user_clients[user] = get_tapis_client(access_tokens[user])
+        perms_dict[user] = tapisfiles.get_files_perms_for_username(username=user, tenant_id=TENANT_ID, t=user_clients[user])
+    policies = tapisfiles.get_files_policies_for_perms(perms_dict=perms_dict, tenant_id=TENANT_ID)
+    # len(policies)
+    # scientists should have access to everything on the zz-scenario-1 system
+    q1 = Policy(policy_type=tapis_files_policy_type, 
+            principal=('dev', 'test2_scientist_1'), 
+            file_perm=('dev', 'zz-scenario2', '*', '/*'), 
+            decision='allow')
+    # ch = PolicyEquivalenceChecker(policy_type=tapis_files_policy_type, policy_set_p=policies, policy_set_q=[q1])
+    ch1 = PolicyEquivalenceChecker(policy_type=tapis_files_policy_type, policy_set_p=policies, policy_set_q=[q1], backend='cvc5')
+    ch1.encode()
+
+    # developers should have read/write access to the code but should not have any access to the data.
+    r1 = Policy(policy_type=tapis_files_policy_type, 
+            principal=('dev', 'test2_developer_1'), 
+            file_perm=('dev', 'zz-scenario2', '*', '/code/*'), 
+            decision='allow')
+
+    r2 = Policy(policy_type=tapis_files_policy_type, 
+            principal=('dev', 'test2_developer_1'), 
+            file_perm=('dev', 'zz-scenario2', '*', '/data/*'), 
+            decision='deny')
+    ch2 = PolicyEquivalenceChecker(policy_type=tapis_files_policy_type, policy_set_p=policies, policy_set_q=[r1, r2], backend='cvc5')
+    ch2.encode()
+
+    # the project manager should not have access to the code orthe data but should have access to the results
+    s1 = Policy(policy_type=tapis_files_policy_type, 
+            principal=('dev', 'test2_project_manager_1'), 
+            file_perm=('dev', 'zz-scenario2', '*', '/code/*'), 
+            decision='deny')
+
+    s2 = Policy(policy_type=tapis_files_policy_type, 
+            principal=('dev', 'test2_project_manager'), 
+            file_perm=('dev', 'zz-scenario2', '*', '/data/*'), 
+            decision='deny')
+    s3 = Policy(policy_type=tapis_files_policy_type, 
+            principal=('dev', 'test2_project_manager'), 
+            file_perm=('dev', 'zz-scenario2', 'READ', '/results/*'), 
+            decision='allow')
+    
+    ch3 = PolicyEquivalenceChecker(policy_type=tapis_files_policy_type, policy_set_p=policies, policy_set_q=[s1, s2, s3], backend='cvc5')
+    ch3.encode()
+
+    return access_tokens, user_clients, perms_dict, policies, ch1, ch2, ch3
+# access_tokens, user_clients, perms_dict, policies, ch1, ch2, ch3 = test_scenario_2()
