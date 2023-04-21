@@ -106,6 +106,50 @@ class Z3Backend(CloudsecBackend):
         expr = self._get_string_expr(string_component_type, value)
         return self._create_bool_encoding(string_component_type.name, expr)
 
+    def _convert_ipaddr_to_bv(self, ip):
+        """
+         Convert an IP address (string) to a z3 bit vector value.
+        """
+        parts = ip.split('.')
+        if not len(parts) == 4:
+            raise Exception("Invalid IP address; format must be A.B.C.D")
+        addr_bit_vecs = [z3.BitVecVal(part, 8) for part in parts]
+        return z3.Concat(*addr_bit_vecs)
+
+    def _get_ipaddr_expr(self, ipaddr_component_type, value):
+        #ip = ipaddr_component_type.ip
+        netmask_len = ipaddr_component_type.netmask_len
+        match_type = ipaddr_component_type.matching_type
+        netmask_bv = self._get_netmask(netmask_len)
+        ip_bv = self._convert_ipaddr_to_bv(value)
+        masked_ip_bv = ip_bv & netmask_bv
+        return masked_ip_bv, netmask_bv
+
+
+    def _get_netmask(self, netmask_len):
+        if netmask_len == 24:
+            netmask_bv = self._convert_ipaddr_to_bv('255.255.255.0')
+        # TODO -- is this right?
+        elif netmask_len == 16:  # 16 bit
+            netmask_bv = self._convert_ipaddr_to_bv('255.255.0.0')
+        elif netmask_len == 8:  # 8 bit
+            netmask_bv = self._convert_ipaddr_to_bv('255.0.0.0')
+        else:
+            raise Exception(f"Value {netmask_len} is not a supported netmaskelen. Valid values are: 8,16,24.")
+        return netmask_bv
+
+
+    def _encode_ip_addr(self, ipaddr_component_type, value):
+       expr, netmask_bv = self._get_ipaddr_expr(ipaddr_component_type,value)
+       return self._create_ipaddr_bool_encoding(ipaddr_component_type.name, expr, netmask_bv)
+
+    def _create_ipaddr_bool_encoding(name, expr, netmask_bv):
+        free_vars = z3.Concat(z3.BitVec(f'{name}_a', 8),
+                              z3.BitVec(f'{name}_b', 8),
+                              z3.BitVec(f'{name}_c', 8),
+                              z3.BitVec(f'{name}_d', 8))
+        return z3.simplify(free_vars & netmask_bv == expr)
+
     def _encode_tuple_parts(self, tuple_component_type, value):
         res = []
         for idx, field in enumerate(tuple_component_type.fields):
@@ -172,6 +216,8 @@ class Z3Backend(CloudsecBackend):
                     component_encodings.append(self._encode_string_enum(policy_comp, policy_comp.data))
                 elif hasattr(policy_comp, 'max_len') and hasattr(policy_comp, 'char_set'):
                     component_encodings.append(self._encode_string(policy_comp, policy_comp.data))
+                elif hasattr(policy_comp,'netmax_len'):
+                    component_encodings.append(self._encode_ip_addr(policy_comp, policy_comp.data))
             final_result.append(z3.And(*component_encodings))
         return final_result
 
