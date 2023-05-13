@@ -9,8 +9,20 @@ import sys
 sys.path.append('/home/cloudsec')
 sys.path.append('/home/cloudsec/cloudsec')
 
-from backends.z3sec import Z3Backend
-from backends.cvc5sec import CVC5Backend
+z3_available = False
+cvc_5_available = False
+
+try:
+    from backends.z3sec import Z3Backend
+    z3_available = True
+except ImportError as e:
+    print(f"Could not import z3. The z3 backend will not be available; error details: {e}")
+
+try:
+    from backends.cvc5sec import CVC5Backend
+    cvc_5_available = True
+except ImportError as e:
+    print(f"Could not import cvc5. The cvc5 backend will not be available; error details: {e}")
 
 
 # Matching strategies
@@ -332,8 +344,12 @@ class PolicyEquivalenceChecker(object):
         # whether or not we hae encoded the policies yet
         self.have_encoded = False
         if self.backend == 'z3':
+            if not z3_available:
+                raise Exception("The z3 backend is not available on this system.")
             self.solver = Z3Backend(policy_type, policy_set_p, policy_set_q)
         if self.backend == 'cvc5':
+            if not cvc_5_available:
+                raise Exception("The cvc5 backend is not available on this system.")
             self.solver = CVC5Backend(policy_type, policy_set_p, policy_set_q)
     
     def encode(self):

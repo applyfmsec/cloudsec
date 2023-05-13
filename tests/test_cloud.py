@@ -97,12 +97,12 @@ def get_policy_sets_2():
     p2 = Policy(policy_type=tapis_policy_type, 
            principal=("a2cps", "jstubbs"), 
            resource=("a2cps", "files", "s2/home/jstubbs/*.py"),
-           level="write",
+           level="execute",
            decision="allow")
     p3 = Policy(policy_type=tapis_policy_type, 
            principal=("a2cps", "jstubbs"), 
            resource=("a2cps", "files", "s2/home/jstubbs/*.py"),
-           level="execute",
+           level="modify",
            decision="allow")
 
     p4 = Policy(policy_type=tapis_policy_type, 
@@ -125,7 +125,7 @@ def get_policy_sets_2():
     q3 = Policy(policy_type=tapis_policy_type, 
            principal=("a2cps", "jstubbs"), 
            resource=("a2cps", "files", "s2/home/jstubbs/a2.py"),
-           level="write",
+           level="modify",
            decision="allow")
     return [p1, p2, p3, p4], [q1, q2, q3]
 
