@@ -2,7 +2,7 @@
 from core import ExactMatching, OneWildcardMatching
 
 # component types --
-from core import StringEnumComponent, StringComponent, TupleComponent
+from core import StringEnumComponent, StringComponent, TupleComponent,IPAddrComponent
 
 # policies
 from core import PolicyType
@@ -51,3 +51,6 @@ tapis_file_perm = TupleComponent(name='file_perm', fields=[tapis_tenant, tapis_s
 
 
 tapis_files_policy_type = PolicyType(components=[tapis_principal, tapis_file_perm])
+
+ip_addr = IPAddrComponent(name="ip",netmask_len=16, matching_type=exact_matching_type)
+firewall_policy_type = PolicyType(components=[ip_addr])

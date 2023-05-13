@@ -186,12 +186,12 @@ class IPAddrComponent(BaseComponent):
     A typical example of an IP address 255.255.119.25
 
     For example:
-        ipAddr = IPAddrCompoment(value="255.255.119.25", netmaskLen=16, matching_type=ExactMatching)
+        ipAddr = IPAddrComponent(netmaskLen=16, matching_type=ExactMatching)
 
     """
-    def __init__(self, name:str, netmask_len:int, matching_type:type) -> None:
+    def __init__(self, name:str, netmask_len:int,  matching_type:type) -> None:
+    #def __init__(self, name: str, matching_type: type) -> None:
         self.name = name
-        #self.ip_val = ip_val
         self.netmask_len = netmask_len
         if not isinstance(matching_type, BaseMatching):
             raise Exception()

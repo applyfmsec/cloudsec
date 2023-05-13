@@ -117,11 +117,13 @@ class Z3Backend(CloudsecBackend):
         return z3.Concat(*addr_bit_vecs)
 
     def _get_ipaddr_expr(self, ipaddr_component_type, value):
-        #ip = ipaddr_component_type.ip
-        netmask_len = ipaddr_component_type.netmask_len
+        ip_split = value.split('/')
+        ip = ip_split[0]
+        netmask_len = ip_split[1]
+        #netmask_len = ipaddr_component_type.netmask_len
         match_type = ipaddr_component_type.matching_type
         netmask_bv = self._get_netmask(netmask_len)
-        ip_bv = self._convert_ipaddr_to_bv(value)
+        ip_bv = self._convert_ipaddr_to_bv(ip)
         masked_ip_bv = ip_bv & netmask_bv
         return masked_ip_bv, netmask_bv
 

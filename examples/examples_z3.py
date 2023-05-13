@@ -4,7 +4,7 @@ sys.path.append('/home/cloudsec/cloudsec')
 
 import z3 
 from core import Policy, PolicyEquivalenceChecker
-from cloud import http_api_policy_type
+from cloud import http_api_policy_type, firewall_policy_type
 
 # Examples of policies
 p = Policy(policy_type=http_api_policy_type, 
@@ -161,8 +161,23 @@ s = Policy(policy_type=http_api_policy_type,
            action="*",
            decision="allow")
 
-checker5 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
+checker5 = PolicyEquivalenceChecker(policy_type=http_api_policy_type,
                                   policy_set_p=[r],
                                   policy_set_q=[s])
 
 checker5.encode()
+
+
+p6 = Policy(policy_type=firewall_policy_type,ip="11.22.33.0/24", decision="allow")
+q6 = Policy(policy_type=firewall_policy_type,ip="11.22.0.0/16", decision="allow")
+checker6 =  PolicyEquivalenceChecker(policy_type=firewall_policy_type,
+                                  policy_set_p=[p6],
+                                  policy_set_q=[q6])
+checker6.encode()
+
+p = Policy(policy_type=http_api_policy_type,
+    principal=("a2cps", "jdoe"),
+    resource=("a2cps", "files",
+              "/ls6/home/jdoe"),
+    action="GET",
+    decision="allow")
