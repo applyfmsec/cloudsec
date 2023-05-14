@@ -119,7 +119,7 @@ class Z3Backend(CloudsecBackend):
     def _get_ipaddr_expr(self, ipaddr_component_type, value):
         ip_split = value.split('/')
         ip = ip_split[0]
-        netmask_len = ip_split[1]
+        netmask_len = int(ip_split[1])
         #netmask_len = ipaddr_component_type.netmask_len
         match_type = ipaddr_component_type.matching_type
         netmask_bv = self._get_netmask(netmask_len)
@@ -145,7 +145,7 @@ class Z3Backend(CloudsecBackend):
        expr, netmask_bv = self._get_ipaddr_expr(ipaddr_component_type,value)
        return self._create_ipaddr_bool_encoding(ipaddr_component_type.name, expr, netmask_bv)
 
-    def _create_ipaddr_bool_encoding(name, expr, netmask_bv):
+    def _create_ipaddr_bool_encoding(self,name, expr, netmask_bv):
         free_vars = z3.Concat(z3.BitVec(f'{name}_a', 8),
                               z3.BitVec(f'{name}_b', 8),
                               z3.BitVec(f'{name}_c', 8),
@@ -218,7 +218,7 @@ class Z3Backend(CloudsecBackend):
                     component_encodings.append(self._encode_string_enum(policy_comp, policy_comp.data))
                 elif hasattr(policy_comp, 'max_len') and hasattr(policy_comp, 'char_set'):
                     component_encodings.append(self._encode_string(policy_comp, policy_comp.data))
-                elif hasattr(policy_comp,'netmax_len'):
+                elif hasattr(policy_comp,'netmask_len'):
                     component_encodings.append(self._encode_ip_addr(policy_comp, policy_comp.data))
             final_result.append(z3.And(*component_encodings))
         return final_result

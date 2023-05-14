@@ -175,9 +175,26 @@ checker6 =  PolicyEquivalenceChecker(policy_type=firewall_policy_type,
                                   policy_set_q=[q6])
 checker6.encode()
 
-p = Policy(policy_type=http_api_policy_type,
-    principal=("a2cps", "jdoe"),
-    resource=("a2cps", "files",
-              "/ls6/home/jdoe"),
-    action="GET",
-    decision="allow")
+'''
+
+In [3]: result = checker6.p_implies_q()
+
+In [4]: result.proved
+Out[4]: True
+
+In [5]: result = checker6.q_implies_p()
+
+In [6]: result.proved
+Out[6]: False
+
+In [7]: result.model
+Out[7]: [ip_c = 222, ip_a = 11, ip_b = 22]
+
+'''
+
+#p = Policy(policy_type=http_api_policy_type,
+#    principal=("a2cps", "jdoe"),
+#    resource=("a2cps", "files",
+#              "/ls6/home/jdoe"),
+#    action="GET",
+#    decision="allow")
