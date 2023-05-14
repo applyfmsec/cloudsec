@@ -120,25 +120,28 @@ class Z3Backend(CloudsecBackend):
         ip_split = value.split('/')
         ip = ip_split[0]
         netmask_len = int(ip_split[1])
-        #netmask_len = ipaddr_component_type.netmask_len
+        netmask_lens = ipaddr_component_type.netmask_lens
         match_type = ipaddr_component_type.matching_type
-        netmask_bv = self._get_netmask(netmask_len)
-        ip_bv = self._convert_ipaddr_to_bv(ip)
-        masked_ip_bv = ip_bv & netmask_bv
-        return masked_ip_bv, netmask_bv
+        if netmask_len in netmask_lens:
+            netmask_bv = self._get_netmask(netmask_len)
+            ip_bv = self._convert_ipaddr_to_bv(ip)
+            masked_ip_bv = ip_bv & netmask_bv
+            return masked_ip_bv, netmask_bv
+        else:
+            raise Exception(f"Value {netmask_len} is not a supported netmaskelen. Valid values are: {netmask_lens}")
 
 
     def _get_netmask(self, netmask_len):
-        if netmask_len == 24:
+       if netmask_len == 24:
             netmask_bv = self._convert_ipaddr_to_bv('255.255.255.0')
         # TODO -- is this right?
-        elif netmask_len == 16:  # 16 bit
+       elif netmask_len == 16:  # 16 bit
             netmask_bv = self._convert_ipaddr_to_bv('255.255.0.0')
-        elif netmask_len == 8:  # 8 bit
-            netmask_bv = self._convert_ipaddr_to_bv('255.0.0.0')
-        else:
-            raise Exception(f"Value {netmask_len} is not a supported netmaskelen. Valid values are: 8,16,24.")
-        return netmask_bv
+       elif netmask_len == 8:  # 8 bit
+        netmask_bv = self._convert_ipaddr_to_bv('255.0.0.0')
+       else:
+        raise Exception(f"Value {netmask_len} is not a supported netmaskelen. Valid values are: 8,16,24.")
+       return netmask_bv
 
 
     def _encode_ip_addr(self, ipaddr_component_type, value):
@@ -218,7 +221,7 @@ class Z3Backend(CloudsecBackend):
                     component_encodings.append(self._encode_string_enum(policy_comp, policy_comp.data))
                 elif hasattr(policy_comp, 'max_len') and hasattr(policy_comp, 'char_set'):
                     component_encodings.append(self._encode_string(policy_comp, policy_comp.data))
-                elif hasattr(policy_comp,'netmask_len'):
+                elif hasattr(policy_comp,'netmask_lens'):
                     component_encodings.append(self._encode_ip_addr(policy_comp, policy_comp.data))
             final_result.append(z3.And(*component_encodings))
         return final_result

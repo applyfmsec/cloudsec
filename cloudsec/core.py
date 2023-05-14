@@ -201,10 +201,10 @@ class IPAddrComponent(BaseComponent):
         ipAddr = IPAddrComponent(netmaskLen=16, matching_type=ExactMatching)
 
     """
-    def __init__(self, name:str, netmask_len:int,  matching_type:type) -> None:
+    def __init__(self, name:str, netmask_lens:"list[int]",  matching_type:type) -> None:
     #def __init__(self, name: str, matching_type: type) -> None:
         self.name = name
-        self.netmask_len = netmask_len
+        self.netmask_lens = netmask_lens
         if not isinstance(matching_type, BaseMatching):
             raise Exception()
         self.matching_type = matching_type

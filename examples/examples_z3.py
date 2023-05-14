@@ -192,9 +192,11 @@ Out[7]: [ip_c = 222, ip_a = 11, ip_b = 22]
 
 '''
 
-#p = Policy(policy_type=http_api_policy_type,
-#    principal=("a2cps", "jdoe"),
-#    resource=("a2cps", "files",
-#              "/ls6/home/jdoe"),
-#    action="GET",
-#    decision="allow")
+
+p7 = Policy(policy_type=firewall_policy_type,ip="11.22.33.0/24", decision="allow")
+q7 = Policy(policy_type=firewall_policy_type,ip="11.22.0.0/17", decision="allow")
+checker7 =  PolicyEquivalenceChecker(policy_type=firewall_policy_type,policy_set_p=[p7],policy_set_q=[q7])
+checker7.encode()
+'''
+Exception: Value 17 is not a supported netmaskelen. Valid values are: [8, 16, 24]
+'''
