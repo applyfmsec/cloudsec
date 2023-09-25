@@ -27,6 +27,45 @@ checker = PolicyEquivalenceChecker(policy_type=http_api_policy_type,
                                   policy_set_q=[q])
 
 
+# A simple template example
+
+# Here, the single template policy includes the policies p and q above since the username variable can
+# take the value of "jstubbs".
+# NOTE: the use of "principal_username" for the variable is essential here -- CloudSec uses a naming
+# convention of "<tuple_name>_<field_name>" its free variables. In the definition of `principal` in cloud.py, 
+# the field is called "username", so that needs to be what is used here. 
+q_template = Policy(policy_type=http_api_policy_type, 
+                    principal=("a2cps", "{{ principal_username }}"), 
+                    resource=("a2cps", "files", "s2/home/{{ principal_username }}"),
+                    action="*",
+                    decision="allow")
+
+
+checker_template = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
+                                            policy_set_p=[p],
+                                            policy_set_q=[q_template])
+
+# Note that a single template can match several policies, each with different (or the same) values for the
+# variable. In this case, it matches "jstubbs" for p, "spadhy" for p2 and "rcardone" for p3.
+p2 = Policy(policy_type=http_api_policy_type, 
+           principal=("a2cps", "spadhy"), 
+           resource=("a2cps", "files", "s2/home/spadhy"),
+           action="GET",
+           decision="allow")
+
+p3 = Policy(policy_type=http_api_policy_type, 
+           principal=("a2cps", "rcardone"), 
+           resource=("a2cps", "files", "s2/home/rcardone"),
+           action="GET",
+           decision="allow")
+
+# here, P => Q because each of p, p2 and p3 adhere to the template defined in q.
+checker_template2 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
+                                             policy_set_p=[p, p2, p3],
+                                             policy_set_q=[q_template])
+
+
+
 a1 = Policy(policy_type=http_api_policy_type, 
            principal=("a2cps", "jstubbs"), 
            resource=("a2cps", "files", "s2/home/jstubbs/*"),
@@ -135,7 +174,7 @@ try:
             action="P*",
             decision="deny")
 except Exception as e:
-    print(f"couldn't create a3, as expected. Error message: {e}")
+    print(f"Couldn't create the a3 object. This error is expected. See examples_z3.py for details. Error message: {e}")
 
 # similarly, this throws an exception as well, because the principal tuple was passed the wrong number of
 # components.
@@ -146,7 +185,7 @@ try:
             action="P*",
             decision="deny")
 except Exception as e:
-    print(f"couldn't create a3, as expected. Error message: {e}")
+    print(f"Couldn't create the a3 object. This error is expected. See examples_z3.py for details. Error message: {e}")
 
 
 r = Policy(policy_type=http_api_policy_type, 

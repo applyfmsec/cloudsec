@@ -1,5 +1,6 @@
 import sys
 import pytest
+import z3
 
 # Add the cloudsec package directory to the python path so that 
 # the tests can run easily from within the tests Docker container
@@ -17,6 +18,9 @@ from core import PolicyType, Policy, PolicyEquivalenceChecker
 
 # constants
 from core import ALPHANUM_SET, PATH_CHAR_SET
+
+# backends
+from backends.z3sec import Z3Backend
 
 
 def get_test_enum():
@@ -182,4 +186,73 @@ def test_cvc5_policy_checker_1():
     # the model should contain the counter example
     assert result.model is not None
                                 
-       
+
+def test_z3_convert_string_with_template():
+    # Tests for the _check_string_part_for_var_template method of the Z3Backend.
+    # first, create a z3 backend; policy_type and policy sets are required, so just pass
+    # any policy type and policies:
+    test_policy_type = get_test_policy_type()    
+    p = Policy(policy_type=test_policy_type, 
+               path="/home/jstubbs/*", 
+               test_tuple=("val1", "mystr"),
+               decision="allow")
+    backend = Z3Backend(policy_type=test_policy_type, policy_set_p=[p], policy_set_q=[p])
+    
+    # Now that backend is instantiated, call _check_string_part_for_var_template() directly
+    
+    # check a template in the middle:
+    result = backend._check_string_part_for_var_template("/home/{{ user }}/data")
+    assert result == z3.Concat(z3.Re("/home/"), z3.Re(z3.String("user")), z3.Re("/data"))
+
+    # check for a template at the end
+    result = backend._check_string_part_for_var_template("/home/{{ user }}")
+    assert result == z3.Concat(z3.Re("/home/"), z3.Re(z3.String("user")))
+
+    # check for a template as the entire string
+    result = backend._check_string_part_for_var_template("{{ user }}")
+    assert result == z3.Re(z3.String("user"))
+
+    # spaces don't matter on either side of the variable name
+    result = backend._check_string_part_for_var_template("/home/{{ user   }}")
+    assert result == z3.Concat(z3.Re("/home/"), z3.Re(z3.String("user")))
+
+    result = backend._check_string_part_for_var_template("/home/{{   user}}")
+    assert result == z3.Concat(z3.Re("/home/"), z3.Re(z3.String("user")))
+
+    # same variable can appear twice:
+    result = backend._check_string_part_for_var_template("/home/{{ user }}/data/{{ user }}")
+    assert result == z3.Concat(z3.Re("/home/"), z3.Re(z3.String("user")), z3.Re("/data/"), z3.Re(z3.String("user")))
+
+    # or different variables
+    result = backend._check_string_part_for_var_template("/home/{{ user }}/data/{{ fooVar }}")
+    assert result == z3.Concat(z3.Re("/home/"), z3.Re(z3.String("user")), z3.Re("/data/"), z3.Re(z3.String("fooVar")))
+
+
+def test_z3_policy_checker_template():
+    test_policy_type = get_test_policy_type()    
+    p1 = Policy(policy_type=test_policy_type, 
+               path="/home/jstubbs", 
+               test_tuple=("val1", "jstubbs"),
+               decision="allow")    
+    p2 = Policy(policy_type=test_policy_type, 
+                path="/home/spadhy", 
+                test_tuple=("val1", "spadhy"),
+                decision="allow")    
+    q = Policy(policy_type=test_policy_type, 
+                # note: the name of the variable must match cloudSec's internal naming, which is
+                #       <component_name>_<field_name>
+                path="/home/{{ test_tuple_test_str }}", 
+                test_tuple=("val1", "{{ test_tuple_test_str }}"),
+                decision="allow") 
+    checker = PolicyEquivalenceChecker(policy_type=test_policy_type, 
+                                  policy_set_p=[p1, p2],
+                                  policy_set_q=[q],
+                                  backend='z3')
+    checker.encode()
+    result = checker.p_implies_q()
+    assert result.proved
+    assert not result.found_counter_ex
+
+    result = checker.q_implies_p()
+    assert not result.proved
+    assert result.found_counter_ex
