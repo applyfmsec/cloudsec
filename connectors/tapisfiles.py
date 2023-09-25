@@ -1,6 +1,26 @@
 """
-This module provides a connector for Tapis Files permissoins, stored in an instance of a 
+This module provides a connector for Tapis Files permissions, stored in an instance of a 
 Tapis SK, to cloudsec. 
+
+Usage:
+Call this program from the command line by exporting a JSON input; e.g., 
+    export TAPIS_BASE_URL="https://dev.tapis.io"   # default is dev.develop.tapis.io
+    export TAPIS_JWT="..."    
+    export TAPIS_INPUT='{"users": ["testuser2"], "tenant_id": "dev"}'
+    python tapisfiles.py
+
+Alternatively, run with the docker image:
+$ docker run -it --rm jstubbs/cloudsec-tapis
+OR
+$ docker run -it --rm -e TAPIS_INPUT='{"users": ["testuser1", "testuser2"], "tenant_id": "dev"}' jstubbs/cloudsec-tapis
+
+Output:
+The total permissions collected as well as the total policies generated for each user are output; e.g.:
+Got 1373 total permissions for testuser2 in tenant dev.
+Got 1373 total permissions for testuser2 in tenant dev.
+Generated 1341 policies for user testuser2.
+Total policies generated: 1341
+
 
 """
 import json
@@ -157,8 +177,6 @@ def main():
     if len(users) == 1 and users[0] == "*" and tenant_id == "dev":
         users = DEV_TENANT_USERS
     perms = get_permissions_for_users(users, tenant_id, tapis_client)
-    for user in users:
-        print(f"Got {len(perms[user])} total permissions for {user} in tenant {tenant_id}.")
     policies = get_files_policies_for_perms(perms, tenant_id)
     print(f"Total policies generated: {len(policies)}")
         
