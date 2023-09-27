@@ -206,7 +206,7 @@ True
 ## Beyond the Introduction: Component Types, Policy Specifications, Variables and Policy Templates
 
 
-## Defining Custom Policy Types
+### Defining Custom Policy Types
 The `cloudsec` library is designed to provide reusable components you can use to build your own security policy types representing the policies of your application. There are two types of building blocks provided by `cloudsec` that can be used for defining your own policy types: types where the underlying data are strings, and types where the underlying data are bit vectors. We discuss the string types first.
 
 #### String Types
@@ -263,7 +263,77 @@ principal = TupleComponent(name="principal", fields=[tenant, username])
 
 ```
 
-### Variables and Policy Templates
+### Policy Specifications, Variables and Policy Templates
+
+A primary motivating use case for CloudSec is to formally prove or disprove that a set of policies in the real world conforms to a set of rules that dictates what kinds of policies are "allowable". CloudSec suggests the following approach: let `P` be the set of policies that exist in our real world system, and define the complete set of all "allowable" policies as `Q`. Then, use CloudSec to show either: 1) `P => Q`, in which case the policies in our real world system are all "safe"; or 2) `P NOT=> Q`, in which case CloudSec can return a counter example which will constitute a policy that is not safe.
+
+We refer to the set of all allowable policies for a system (the set `Q` in the example above) as a policy specification. 
+In general, defining the policy specification for a system is very difficult. One of the challenges is that policies evolve over time: 
+new users are added, resources are created, modified and deleted, etc., and the security policies must be updated to reflect the changes. 
+
+To support capturing the evolving nature of the security policies in a concise way, CloudSec provides support for defining policies with variables. We refer to policies that include variables as *policy templates* because typically, they represent a family of policies. 
+
+As a motivating example, consider a shared Unix file system supporting multiple users. Each user has a home directory where they have exclusive read/write access. We might model the security policies for such as a system in CloudSec as follows:
+
+```python
+username = StringComponent(name="username", 
+                           char_set=ALPHANUM_SET, 
+                           max_len=25,             
+                           matching_type=OneWildcardMatching())
+path = StringComponent(name="path", 
+                       char_set=PATH_CHAR_SET, 
+                       max_len=250, 
+                       matching_type=OneWildcardMatching())
+permission_level = StringEnumComponent(name="permission_level", 
+                                       values=["read", "write", "execute"], 
+                                       matching_type=OneWildcardMatching())
+FileSystemPolicyType = PolicyType(components=[username, path, permission_level])
+```
+
+With this model, we can represent the permission individual users have
+on their home directory as follows:
+
+```python
+joe_home_dir_policy = Policy(policy_type=FileSystemPolicyType,
+                           username="jstubbs", 
+                           path="/home/jstubbs/",
+                           permission_level="*",
+                           decision="allow")
+smruti_home_dir_policy = Policy(policy_type=FileSystemPolicyType,
+                           username="spadhy", 
+                           path="/home/spadhy/",
+                           permission_level="*",
+                           decision="allow")
+```
+Here, we have declared that user `jstubbs` and user `spadhy` should have
+access to their respective home directories. But what about other users? 
+Using variables, we can specify that every user should have access to their
+home directory in one, succint policy template, as follows:
+
+```python
+home_dir_policy_template = Policy(policy_type=FileSystemPolicyType,
+                           username="{{ username }}", 
+                           path="/home/{{ username }}/*",
+                           permission_level="*",
+                           decision="allow")
+```
+
+We enclose CloudSec variable names in  `{{ }}`; here, we are using the ``username`` variable. Note that CloudSec defines free variables for each field in a policy; for fields within a tuples, the variable name is `<tuple_name>_<field_name>`.
+
+We can now use CloudSec to check that our first two policies imply (i.e., are no more permissive) than the policy template:
+
+```python
+checker = PolicyEquivalenceChecker(policy_type=FileSystemPolicyType,
+                                   policy_set_p=[joe_home_dir_policy, smruti_home_dir_policy],
+                                   policy_set_q=[home_dir_policy_template])
+
+result = checker.p_implies_q()
+result.proved()
+  --> True
+```
+We can think of `home_dir_policy_template` as the policy specification for this
+case. With this approach, if we add another user to the system and a corresponding third home directory policy to our set, the implication will still hold. 
+
 
 ## Developing CloudSec
 
