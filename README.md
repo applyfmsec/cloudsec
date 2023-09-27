@@ -6,16 +6,19 @@ The `cloudsec` project takes influence from a number of related projects, such a
 
 ## Table of Contents
 
-1. [About](https://github.com/applyfmsec/cloudsec#about-cloudsec)
-2. [Background](https://github.com/applyfmsec/cloudsec#background)
-3. [Introduction](https://github.com/applyfmsec/cloudsec#introduction)
-4. [Installation](https://github.com/applyfmsec/cloudsec#installation)
-5. Building the Images From Source
-6. Trying the Examples with Docker
+1. [About](#about-cloudsec)
+2. [Background](#background)
+3. [Introduction](#introduction)
+4. [Installation](#installation)
+5. [Building the Images From Source](#building-the-images-from-source)
+6. [Trying the Examples with Docker](#trying-the-examples-with-docker)
 7. [Beyond the Introduction: Component Types, Policy Specifications, Variables and Policy Templates](#beyond-the-introduction-component-types-policy-specifications-variables-and-policy-templates)
-   7a. Defining Custom Policy Types](#defining-custom-policy-types)
-   7b. Variables and Policy Templates
-8. Developing CloudSec
+
+   7a. [Defining Custom Policy Types](#defining-custom-policy-types)
+
+   7b. [Variables and Policy Templates](#variables-and-policy-templates)
+
+8. [Developing CloudSec](#developing-cloudsec)
 
 
 ## Background
