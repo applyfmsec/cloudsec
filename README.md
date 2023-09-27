@@ -254,7 +254,8 @@ To complete the example, here is how we might define our `principal` type as a t
 
 ```python
 tenant = StringEnumComponent(name="tenant", 
-                             values=set(["tenant1", "tenant2", "tenant3"]), matching_type=ExactMatching())
+                             values=set(["tenant1", "tenant2", "tenant3"]),
+                             matching_type=ExactMatching())
 
 username = StringComponent(name="username", 
                            char_set=ALPHANUM_SET, 
