@@ -131,6 +131,9 @@ class Z3Backend(CloudsecBackend):
 
         if value == wildcard:
             return z_all_vals_re_ref
+        # we allow the use of variables in string enums
+        if TEMPLATE_LEFT_DL in value:
+            return self._check_string_part_for_var_template(value)
         if value not in values:
             message=f"value {value} is not allowed for enum type {string_enum_component_type.name}; allowed values are {values}"
             raise Exception(message)
