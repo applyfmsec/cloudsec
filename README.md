@@ -4,6 +4,20 @@ initially, [z3](https://github.com/z3prover) and [cvc5](https://cvc5.github.io/)
 The `cloudsec` project takes influence from a number of related projects, such as the [Z3 Firewall Checker](https://github.com/Z3Prover/FirewallChecker).
 
 
+## Table of Contents
+
+1. [About](https://github.com/applyfmsec/cloudsec#about-cloudsec)
+2. [Background](https://github.com/applyfmsec/cloudsec#background)
+3. [Introduction](https://github.com/applyfmsec/cloudsec#introduction)
+4. [Installation](https://github.com/applyfmsec/cloudsec#installation)
+5. Building the Images From Source
+6. Trying the Examples with Docker
+7. Beyond the Introduction: Component Types, Policy Specifications, Variables and Policy Templates
+   7a. Defining Custom Policy Types
+   7b. Variables and Policy Templates
+8. Developing CloudSec
+
+
 ## Background
 Cloud/API systems are commonly secured through the use of security *policies* -- rules governing the set of  actions that agents (users, services, etc) are authorized to take within the system. For example, AWS uses IAM Policies; Kubernetes provides pod security policies, network policies, RBAC, etc. 
 
@@ -16,7 +30,7 @@ model that grants users access to different endpoints in the API. For simplicity
 a URL path (e.g., `/apps`, `/jobs`, etc) and an HTTP verb (e.g., `GET`, `POST`, `DELETE`, etc.). We can use
 CloudSec to define a new policy type for our web API with just a few lines of code:
 
-```
+```python
 from cloudsec.core import StringComponent, StringEnumComponent, Policy, PolicyType, OneWildcardMatching
 
 username = StringComponent(name="username", 
@@ -45,7 +59,7 @@ a specical `decision` field which all policy types inherit. The `decision` field
 
 Here we create two policies:
 
-```
+```python
 p = Policy(policy_type=WebAPIPolicyType, 
            username="jstubbs", 
            path="/apps",
@@ -65,7 +79,7 @@ value. We can use wildcard characters when defining any of the values in our pol
 
 We can now analyze these two policies using a cloudSec `PolicyEquivalenceChecker`. 
 
-```
+```python
 checker = PolicyEquivalenceChecker(policy_type=WebAPIPolicyType, 
                                    policy_set_p=[p],
                                    policy_set_q=[q])
@@ -74,7 +88,7 @@ checker = PolicyEquivalenceChecker(policy_type=WebAPIPolicyType,
 The `checker` object has methods that allow us to analyze the equivalence of the two policy sets, `[p]` and 
 `[q]`:
 
-```
+```python
 result = checker.p_implies_q()
 result.proved
   --> True
@@ -95,11 +109,12 @@ not proved and in fact it found a counter example. Indeed, `p` is strictly less 
 above cloudSec is leveraging the z3 theorem prover, but we could have used cvc5 instead -- all we would need
 to do is specify `backend="c5c5"` when constructing the `PolicyEquivalenceChecker` instance.  
 
+
 ## Installation
 
 The CloudSec library is available on pypi as `cloudsecpy`. Install using poetry, pip, etc.
 
-```
+```bash
 poetry add cloudsecpy
 ```
 Note that CloudSec depends on SMT solvers, such as Z3 and cvc5. The python package will install the 
@@ -107,30 +122,49 @@ corresponding depenency packages, e.g., `z3-solver`.
 
 The project also provides Docker images with cloudSec and its dependencies preinstalled. 
 
+* `ghcr.io/applyfmsec/cloudsec` -- Base image with CloudSec software and dependencies.
+* `ghcr.io/applyfmsec/cloudsec-exs` -- Extends the base image with examples.
+* `ghcr.io/applyfmsec/cloudsec-tests-perf` -- Extends the examples image with a complete performance test suite.
+
+You can install any of the images above using the Docker CLI, for example:
+
+```bash
+docker pull ghcr.io/applyfmsec/cloudsec
+```
 
 ## Building the Images From Source
 
-Docker images can be built to try out the `cloudsec` software. The `Makefile` can be used to generate the
-images:
+You can also build any and all of the Docker images from source. First, clone this git repository:
 
+```bash
+git clone https://github.com/applyfmsec/cloudsec.git
+cd cloudsec
 ```
-$ make build
+
+Then, use the  `Makefile` to generate the images. For example, to build all of the images with one command:
+
+```bash
+make build
 ```
+
+See the Makefile for commands to build specific images.
 
 
 ## Trying the Examples with Docker
 
-With the images generated, start a container with the `cloudsec` software and examples using `docker`:.
-Have a look at the `examples_z3.py` file, contained within the `examples` directory, for all the definitions
-of the objects used below. 
+With the images installed locally, we can use try the examples out in a container.
+Start a container with the `cloudsec` software and examples using `docker` (change the image name if you built 
+from source):
 
-```
-$ docker run -it --rm --entrypoint=bash --name=sec  jstubbs/cloudsec-exs
+```bash
+$ docker run -it --rm --entrypoint=bash --name=sec  ghcr.io/applyfmsec/cloudsec-exs
 ```
 
-Start a Python shell and import the examples:
+From within the container, start a Python shell and import the examples:
+(Have a look at the `examples_z3.py` file, contained within the `examples` directory, for all the definitions
+of the objects used below.)
 
-```
+```python
 # from within the container started above,
 
 >>> from examples_z3 import *
@@ -166,17 +200,79 @@ True
 
 ```
 
-## Development
+## Beyond the Introduction: Component Types, Policy Specifications, Variables and Policy Templates
 
-`cloudsec` includes a test suite based on `pytest`. The Makefile can be used to build
-the tests container image and run the tests:
+
+## Defining Custom Policy Types
+The `cloudsec` library is designed to provide reusable components you can use to build your own security policy types representing the policies of your application. There are two types of building blocks provided by `cloudsec` that can be used for defining your own policy types: types where the underlying data are strings, and types where the underlying data are bit vectors. We discuss the string types first.
+
+#### String Types
+`cloudsec` currently provides 3 different base types for working with string data in security policies: `StringComponent`, `StringEnumComponent`, and `TupleComponent`. All three descend from the base class `BaseComponent` and allow for policies with wildcard (`*`) characters by utilizing regular expression constraints over the theory of strings. 
+
+##### The `StringEnumComponent` Type
+The `core.StringEnumComponent` type can be used for strings that can take a fixed, finite set of values. The `cloud.action` type, representing an HTTP verb, is a good example of a `StringEnumComponent` because instances of the type can only take on one of the following values: GET, POST, PUT, DELETE or *. In general, `StringEnumComponent` values cannot contain a wildcard with other characters; e.g., `P*` is not a valid `action` value.
+
+To create a new type based on `StringEnumComponent`, specify the `name` of the component, the allowable `values` for the new type and a `matching_type`:
+
+```python
+example_enum = StringEnumComponent(name="example_enum", 
+                                   values=['value_1', 'value_2', 'value_3'],
+                                    matching_type=one_wildcard_matching
+```
+The `matching_type=one_wildcard_matching` specifies that we allow matching with one wildcard character. Currently, this is the only supported matching type in `cloudsec`, but support for additional matching types is planned for future releases. 
+
+
+##### The `StringComponent` Type
+The `core.StringComponent` type can be used for strings that can take arbitrary values from a specified character set. A username in a cloud system is an example of something we might model with a `StringRe` type, if we do not consider the list of usernames in our system to be a fixed, finite list (otherwise, `StringEnumRe` would be a better choice). Unlike `StringEnumRe`, a `StringRe` value can contain wildcard characters with other characters.
+
+To create a type based on `StringComponent`, one needs to specify the name, character set, maximum length, and the matching type. Here's an 
+example representing a "path" (from the `cloudsec.cloud` module):
+
+```python
+
+path = StringComponent(name="path", 
+                       char_set=PATH_CHAR_SET, 
+                       max_len=250, 
+                       matching_type=one_wildcard_matching)
+```
+The `cloud` module makes use of `StringComponent` for usernames as well. 
+
+##### The `TupleComponent` Type
+The `core.TupleComponent` type is useful for types that are really the composition of multiple `StringComponent` and/or `StringEnumComponent` types that should be thought of individually for the purposes of wildcard matching, but should be thought of as a single value in the overall policy. 
+
+We illustrate the concept using the example of a principal (a user identity) in a multi-tenant cloud system. In such
+a system, every user belongs to some tenant, and it is typical to represent an end-user identity as a username together with a tenant id. For example, for the `jsmith` user in the `foo` tenant, we might write the principal as `jsmith.foo` (or `jsmith@foo`, etc). For security policies in such a system that authorize principal(s) for one or more resources/actions, it is important to match the entire principal (user and tenant). For example, a security policy that authorizes `jsmith.bar` (`jsmith` in the `bar` tenant) for some resources has no bearing on the `jsmith.foo` user.
+However, with wildcard characters, we want the wildcard to apply to only one component of the principal. For example, `*.foo` would be all users in the foo tenant, while `jsmith*.foo` would be all users in the foo tenant whose username starts with `jsmith`. 
+
+We can create a new tuple type from existing types by using the `TupleComponent` class and specifying a `fields` attribute. The `fields` attribute is a list of 
+
+As an example, here is how we might define our `principal` type as a tuple of `tenant` and `username` types, described above:
+
+```python
+
+tenant = StringEnumComponent(name="tenant", 
+                             values=set(["tenant1", "tenant2", "tenant3"]), matching_type=exact_matching_type)
+
+username = StringComponent(name="username", 
+                           char_set=ALPHANUM_SET, 
+                           max_len=25, matching_type=one_wildcard_matching)
+principal = TupleComponent(name="principal", fields=[tenant, username])
 
 ```
+
+### Variables and Policy Templates
+
+## Developing CloudSec
+
+The `cloudsec` library includes a test suite based on `pytest`. The Makefile can be used to build
+the tests container image and run the tests:
+
+```bash
 # Build the tests image 
 $ make build-tests
 ```
 
-```
+```bash
 # Run the tests
 $ make test
 ```
