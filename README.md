@@ -16,7 +16,7 @@ The CloudSec project takes influence from a number of related projects, such as 
 
    7a. [Defining Custom Policy Types](#defining-custom-policy-types)
 
-   7b. [Variables and Policy Templates](#variables-and-policy-templates)
+   7b. [Policy Specifications, Variables and Policy Templates](#policy-specifications-variables-and-policy-templates)
 
 8. [Developing CloudSec](#developing-cloudsec)
 
