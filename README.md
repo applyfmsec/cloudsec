@@ -158,7 +158,7 @@ See the Makefile for commands to build specific images.
 ## Trying the Examples with Docker
 
 With the images installed locally, we can try out the examples in a Docker container.
-Start a container with the `cloudsec` software and examples using `docker` (change the image name if you built 
+Start a container with the CloudsSec software and examples using `docker` (change the image name if you built 
 from source):
 
 ```bash
@@ -166,7 +166,7 @@ $ docker run -it --rm --entrypoint=bash --name=sec  ghcr.io/applyfmsec/cloudsec-
 ```
 
 From within the container, start a Python shell and import the examples:
-(Have a look at the `examples_z3.py` file, contained within the `examples` directory, for all the definitions
+(Have a look at the [examples_z3.py](examples/examples_z3.py) file, contained within the [examples](examples) directory, for all the definitions
 of the objects used below.)
 
 ```python
@@ -234,7 +234,6 @@ To create a type based on `StringComponent`, one needs to specify the name, char
 example representing a "path" (from the `cloudsec.cloud` module):
 
 ```python
-
 path = StringComponent(name="path", 
                        char_set=PATH_CHAR_SET, 
                        max_len=250, 
@@ -249,12 +248,11 @@ We illustrate the concept using the example of a principal (a user identity) in 
 a system, every user belongs to some tenant, and it is typical to represent an end-user identity as a username together with a tenant id. For example, for the `jsmith` user in the `foo` tenant, we might write the principal as `jsmith.foo` (or `jsmith@foo`, etc). For security policies in such a system that authorize principal(s) for one or more resources/actions, it is important to match the entire principal (user and tenant). For example, a security policy that authorizes `jsmith.bar` (`jsmith` in the `bar` tenant) for some resources has no bearing on the `jsmith.foo` user.
 However, with wildcard characters, we want the wildcard to apply to only one component of the principal. For example, `*.foo` would be all users in the foo tenant, while `jsmith*.foo` would be all users in the foo tenant whose username starts with `jsmith`. 
 
-We can create a new tuple type from existing types by using the `TupleComponent` class and specifying a `fields` attribute. The `fields` attribute is a list of 
+We can create a new tuple type from existing types by using the `TupleComponent` class and specifying a `fields` attribute. The `fields` attribute is a list of previously defined components (`StringComponent` and/or `StringEnumComponent`).
 
-As an example, here is how we might define our `principal` type as a tuple of `tenant` and `username` types, described above:
+To complete the example, here is how we might define our `principal` type as a tuple of `tenant` and `username` types, described above:
 
 ```python
-
 tenant = StringEnumComponent(name="tenant", 
                              values=set(["tenant1", "tenant2", "tenant3"]), matching_type=ExactMatching())
 
@@ -263,7 +261,6 @@ username = StringComponent(name="username",
                            max_len=25, 
                            matching_type=OneWildcardMatching())
 principal = TupleComponent(name="principal", fields=[tenant, username])
-
 ```
 
 ### Policy Specifications, Variables and Policy Templates
