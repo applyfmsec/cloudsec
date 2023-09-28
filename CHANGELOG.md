@@ -11,6 +11,8 @@ This second release adds support for variables in policies, also referred to as 
 - Add support for using cloudSec variables in the values of components in policies. This feature allows users
 to define entire sets of policies in a concise way.
 
+- Add support for running CloudSec without all SMT solvers installed. The library now attempts to install each library and catches failures (Issue #3).
+
 ### Bug fixes:
 - None
 
