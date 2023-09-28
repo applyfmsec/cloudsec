@@ -3,8 +3,8 @@ sys.path.append('/home/cloudsec')
 sys.path.append('/home/cloudsec/cloudsec')
 
 import z3 
-from core import Policy, PolicyEquivalenceChecker
-from cloud import http_api_policy_type
+from cloudsec.core import Policy, PolicyEquivalenceChecker
+from cloudsec.cloud import http_api_policy_type
 
 # Examples of policies
 p = Policy(policy_type=http_api_policy_type, 
@@ -148,7 +148,7 @@ checker4.encode()
 
 
 # Tests with the Z3Backend
-from backends.z3sec import Z3Backend
+from cloudsec.backends.z3sec import Z3Backend
 solver = Z3Backend(http_api_policy_type, [a1, a2], [b1])
 solver._encode_string_enum(a1.components.resource.fields[0], a1.components.resource.data[0])
 solver._encode_string_enum(a1.components.resource.fields[1], a1.components.resource.data[1])

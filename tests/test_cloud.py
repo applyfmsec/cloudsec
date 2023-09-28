@@ -3,11 +3,12 @@ import pytest
 
 # Add the cloudsec package directory to the python path so that 
 # the tests can run easily from within the tests Docker container
+sys.path.append('/home/cloudsec')
 sys.path.append('/home/cloudsec/cloudsec')
 print(f"Python path: {sys.path}")
 
-from core import PolicyType, Policy, PolicyEquivalenceChecker
-from cloud import tapis_policy_type
+from cloudsec.core import PolicyType, Policy, PolicyEquivalenceChecker
+from cloudsec.cloud import tapis_policy_type
 
 
 def get_policy_sets_1():

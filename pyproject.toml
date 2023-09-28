@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cloudsecpy"
-version = "0.1.0"
+version = "0.1.1"
 description = "Library and toolkit for formally analyzing security policies in cloud systems using Python."
 authors = ["Joe Stubbs <jstubbs@tacc.utexas.edu>", "Smruti Padhy <spadhy@tacc.utexas.edu>"]
 readme = "README.md"

@@ -13,13 +13,13 @@ z3_available = False
 cvc_5_available = False
 
 try:
-    from backends.z3sec import Z3Backend
+    from cloudsec.backends.z3sec import Z3Backend
     z3_available = True
 except ImportError as e:
     print(f"Could not import z3. The z3 backend will not be available; error details: {e}")
 
 try:
-    from backends.cvc5sec import CVC5Backend
+    from cloudsec.backends.cvc5sec import CVC5Backend
     cvc_5_available = True
 except ImportError as e:
     print(f"Could not import cvc5. The cvc5 backend will not be available; error details: {e}")

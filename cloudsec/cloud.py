@@ -1,14 +1,14 @@
 # matching strategies --
-from core import ExactMatching, OneWildcardMatching
+from cloudsec.core import ExactMatching, OneWildcardMatching
 
 # component types --
-from core import StringEnumComponent, StringComponent, TupleComponent
+from cloudsec.core import StringEnumComponent, StringComponent, TupleComponent
 
 # policies
-from core import PolicyType
+from cloudsec.core import PolicyType
 
 # constants
-from core import ALPHANUM_SET, PATH_CHAR_SET
+from cloudsec.core import ALPHANUM_SET, PATH_CHAR_SET
 
 # todo -- pass in matching_type instance
 exact_matching_type = ExactMatching()
@@ -48,6 +48,21 @@ tapis_files_perms_level = StringEnumComponent(name="level",
 tapis_file_perm = TupleComponent(name='file_perm', fields=[tapis_tenant, tapis_system_id, tapis_files_perms_level, path])
 
 
-
-
 tapis_files_policy_type = PolicyType(components=[tapis_principal, tapis_file_perm])
+
+
+k8s_namespace = StringComponent(name="k8s_namespace", 
+                                char_set=ALPHANUM_SET, 
+                                max_len=50, 
+                                matching_type=one_wildcard_matching)
+k8s_api_group = StringEnumComponent(name="k8s_api_group", 
+                                    values=set(["core", "apps"]), 
+                                    matching_type=one_wildcard_matching)
+k8s_resource = StringEnumComponent(name="k8s_resource", 
+                                   values=set(["pod", "service", "deployment", "replicaset", "job", "daemonset",  "statefulset", "pvc", "cronjob"]), 
+                                   matching_type=one_wildcard_matching)
+k8s_verb = StringEnumComponent(name="k8s_verb", 
+                               values=set([]), 
+                               matching_type=one_wildcard_matching)
+k8s_principal = TupleComponent(name="k8s_principal", fields=[k8s_namespace, username])
+k8s_role = TupleComponent(name="k8s_role", fields=[k8s_namespace, ])

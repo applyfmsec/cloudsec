@@ -4,23 +4,24 @@ import z3
 
 # Add the cloudsec package directory to the python path so that 
 # the tests can run easily from within the tests Docker container
+sys.path.append('/home/cloudsec/')
 sys.path.append('/home/cloudsec/cloudsec')
 print(f"Python path: {sys.path}")
 
 
 # matching strategies --
-from core import ExactMatching, OneWildcardMatching
+from cloudsec.core import ExactMatching, OneWildcardMatching
 
-from core import StringEnumComponent, StringComponent, TupleComponent
+from cloudsec.core import StringEnumComponent, StringComponent, TupleComponent
 
 # policies
-from core import PolicyType, Policy, PolicyEquivalenceChecker
+from cloudsec.core import PolicyType, Policy, PolicyEquivalenceChecker
 
 # constants
-from core import ALPHANUM_SET, PATH_CHAR_SET
+from cloudsec.core import ALPHANUM_SET, PATH_CHAR_SET
 
 # backends
-from backends.z3sec import Z3Backend
+from cloudsec.backends.z3sec import Z3Backend
 
 
 def get_test_enum():
