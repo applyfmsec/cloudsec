@@ -1,5 +1,4 @@
-# TODO -- move to a non-personal image org.
-# Image: jstubbs/cloudsec  (i.e., applyfmsec/cloudsec)
+# Image: ghcr.io/applyfmsec/cloudsec
 
 FROM python:3.9-slim-buster
 

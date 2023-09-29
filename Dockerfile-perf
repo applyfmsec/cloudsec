@@ -1,7 +1,6 @@
-# Image: jstubbs/cloudsec-tests-perf
+# Image: ghcr.io/applyfmsec/cloudsec-tests-perf
 
-FROM jstubbs/cloudsec
-
+FROM ghcr.io/applyfmsec/cloudsec
 
 USER root
 COPY requirements-tests.txt .

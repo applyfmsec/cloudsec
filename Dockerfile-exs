@@ -1,6 +1,6 @@
-# Image: jstubbs/cloudsec-exs
+# Image: ghcr.io/applyfmsec/cloudsec-exs
 
-FROM jstubbs/cloudsec-tapis
+FROM ghcr.io/applyfmsec/cloudsec
 
 COPY examples /home/cloudsec/examples
 

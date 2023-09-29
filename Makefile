@@ -8,7 +8,7 @@ all:
 	$(Using image namespace: $(IMAGE_NAMESPACE))
 
 build-core: all
-	docker build -t jstubbs/cloudsec .
+	docker build -t $(IMAGE_NAMESPACE)/cloudsec .
 
 build-tests: build-core
 	docker build -t $(IMAGE_NAMESPACE)/cloudsec-tests -f Dockerfile-tests .
