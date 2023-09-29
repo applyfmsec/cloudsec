@@ -2,6 +2,7 @@
 from builtins import Exception, KeyError, dict, isinstance, setattr
 from copy import deepcopy
 from select import select
+import threading, queue
 from typing import Dict, Tuple
 
 import sys
@@ -313,8 +314,7 @@ class PolicyEquivalenceChecker(object):
                  policy_set_q: "list(Policy)",
                  backend="z3"
                  ):
-        
-        supported_backends = set(["z3", "cvc5"])
+        supported_backends = set(["z3", "cvc5", "*"])
         self.policy_type = policy_type
         self.policy_set_p = policy_set_p
         self.policy_set_q = policy_set_q
@@ -322,37 +322,117 @@ class PolicyEquivalenceChecker(object):
             raise Exception(f"The specified backend ({backend}) is currently not supported; The supported "\
                 f"backends include: {supported_backends}.")
         self.backend = backend
-        # whether or not we hae encoded the policies yet
-        self.have_encoded = False
-        if self.backend == 'z3':
+        self.solvers = []
+        if self.backend == 'z3' or self.backend == '*':
             if not z3_available:
                 raise Exception("The z3 backend is not available on this system.")
-            self.solver = Z3Backend(policy_type, policy_set_p, policy_set_q)
-        if self.backend == 'cvc5':
+            self.solvers.append({'solver': Z3Backend(policy_type, policy_set_p, policy_set_q),
+                                'have_encoded': False})
+
+        if self.backend == 'cvc5' or self.backend == '*':
             if not cvc_5_available:
                 raise Exception("The cvc5 backend is not available on this system.")
-            self.solver = CVC5Backend(policy_type, policy_set_p, policy_set_q)
+            self.solvers.append({'solver': CVC5Backend(policy_type, policy_set_p, policy_set_q),
+                                'have_encoded': False})
     
     def encode(self):
         """
         Use `self.backend` to encode the policies.
         """
-        if self.have_encoded:
-            return
-        self.solver.encode()
-        self.have_encoded = True
+        for s in self.solvers:
+            if s['have_encoded']:
+                continue
+            s['solver'].encode()
+            s['have_encoded'] = True
 
     def p_implies_q(self):
-        if not self.have_encoded:
-            self.solver.encode()
-            self.have_encoded = True
-        return self.solver.p_implies_q()
+        """
+        Use the backend solvers to check whether P => Q. 
+        If there are multiple backends, this function starts each backend in a separate thread and returns
+        as soon as the first thread completes. 
+        """
+        # If we have more than one solver, start each in a separate thread
+        if len(self.solvers) > 1:
+            # the list of the threads we start
+            threads = []
+            # use a queue to communicate results across threads
+            q = queue.Queue()
+            # start each 
+            for s in self.solvers:
+                # the actual backend solver, e.g., Z3Backend or CVC5Backend
+                solver = s['solver']
+                # create and start a new thread
+                t = threading.Thread(target=self._thread_target, 
+                                     args=(q, solver.p_implies_q), 
+                                     name=f"{type(solver)}_p_implies_q", 
+                                     # daemon threads do not prevent the main process from exiting
+                                     daemon=True)
+                t.start()
+                threads.append(t)
+            # wait for the first result, blocking indefinitely. 
+            # TODO: in the future this function could take a timeout param and pass it here
+            result = q.get(block=True, timeout=None)
+            # once we have a result, clean up all of the threads
+            # for t in threads:
+            #     t.stop()
+            return result
+
+        # there is exactly one solver, so just run it in the main thread
+        else:
+            if not self.solvers[0]['have_encoded']:
+                self.encode()
+            return self.solvers[0]['solver'].p_implies_q()
+        
+    def _thread_target(self, q, callable):
+        """
+        This function wraps `callable` by returning its result on `q`, which should be of type
+        queue.Queue.
+        """
+        result = callable()
+        q.put(result)
+
 
     def q_implies_p(self):
-        if not self.have_encoded:
-            self.solver.encode()
-            self.have_encoded = True
-        return self.solver.q_implies_p()
-        
+        """
+        Use the backend solvers to check whether Q => P. 
+        If there are multiple backends, this function starts each backend in a separate thread and returns
+        as soon as the first thread completes. 
+        """
+        # If we have more than one solver, start each in a separate thread
+
+        if len(self.solvers) > 1:
+            # the list of the threads we start
+            threads = []
+            # use a queue to communicate results across threads
+            q = queue.Queue()
+            # start each 
+            for s in self.solvers:
+                # the actual backend solver, e.g., Z3Backend or CVC5Backend
+                solver = s['solver']
+                # Create and start a new thread
+                # We use self._thread_target as the target for the thread. This function
+                # takes care of calling the actual backend and putting its result on the queue.
+                # This way, the implementation of each backend doesn't have to worry about queues.
+                t = threading.Thread(target=self._thread_target, 
+                                     # we need to pass both the `q` object and the callable to _thread_target
+                                     args=(q, solver.q_implies_p), 
+                                     # name the thread after the backend solver and the method it is executing
+                                     name=f"{type(solver)}_q_implies_p", 
+                                     # daemon threads do not prevent the main process from exiting
+                                     daemon=True)
+                t.start()
+                threads.append(t)
+            # wait for the first result, blocking indefinitely. 
+            # TODO: in the future this function could take a timeout param and pass it here
+            result = q.get(block=True, timeout=None)
+            # once we have a result, clean up all of the threads
+            # for t in threads:
+            #     t.kill()
+            return result
+        # there is exactly one solver, so just run it in the main thread
+        else:
+            if not self.solvers[0]['have_encoded']:
+                self.encode()
+            return self.solvers[0]['solver'].q_implies_p()
 
 
