@@ -1,6 +1,6 @@
 # Image: jstubbs/cloudsec-tapis
 
-FROM jstubbs/cloudsec-tests
+FROM ghcr.io/applyfmsec/cloudsec-tests
 
 USER root
 RUN pip install --upgrade pip

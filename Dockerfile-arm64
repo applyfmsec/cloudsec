@@ -1,6 +1,5 @@
 # Image: ghcr.io/applyfmsec/cloudsec
-
-FROM python:3.9-slim-buster
+FROM arm64v8/python:latest
 
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -10,8 +9,26 @@ ENV PYTHONUNBUFFERED=1
 
 # Install pip requirements
 COPY requirements.txt .
-RUN python -m pip install -r requirements.txt
-RUN python -m pip install -r requirements-cvc5.txt
+RUN pip3 install -r requirements.txt
+
+USER root
+RUN pip3 install cmake cython
+RUN pip3 install toml scikit-build
+#RUN /usr/local/bin/python3.12 -m pip install pyparsing
+RUN pip3 install pyparsing
+
+RUN git clone https://github.com/cvc5/cvc5.git
+WORKDIR /cvc5
+RUN ./configure.sh --python-bindings --auto-download
+WORKDIR /cvc5/build
+RUN make
+RUN make check
+RUN make install
+RUN export PYTHONPATH="/cvc5/build/src/api/python/"
+
+#USER cloudsec
+#WORKDIR /home/cloudsec/cloudsec
+
 # Creates a non-root user with an explicit UID and adds permission to access the /app folder
 # For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers
 RUN adduser -u 4872 --disabled-password --gecos "" cloudsec

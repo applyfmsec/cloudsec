@@ -1,6 +1,6 @@
 # Image: jstubbs/cloudsec-tests
 
-FROM jstubbs/cloudsec
+FROM ghcr.io/applyfmsec/cloudsec
 
 
 USER root
