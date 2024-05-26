@@ -14,11 +14,8 @@ import sys
 from cloudsec.backends import ImplResult
 multiprocessing.set_start_method('fork')
 # these are for the cloudsec container image --
-#sys.path.append('/home/cloudsec')
-#sys.path.append('/home/cloudsec/cloudsec')
-
-sys.path.append('/Users/spadhy/git-repos/cloudsec')
-sys.path.append('/Users/spadhy/git-repos/cloudsec/cloudsec')
+sys.path.append('/home/cloudsec')
+sys.path.append('/home/cloudsec/cloudsec')
 
 z3_available = False
 cvc_5_available = False
@@ -381,20 +378,13 @@ class PolicyEquivalenceChecker(object):
             for args in iter(task_queue_z3.get,'STOP'):
                 if args=='p_implies_q':
                     print("\n Z3Backend: Received the task p=>q. ")
-
-                    #cloudpickle.register_pickle_by_value(ImplResult)
                     p_q = ImplResult(slv.p_implies_q().proved,
                                       slv.p_implies_q().found_counter_ex, str(slv.p_implies_q().model))
 
-                    #result_queue.put((solver['solver_name'], cloudpickle.dumps(slv.p_implies_q())))
-                    #result_queue.put((solver['solver_name'], slv.p_implies_q().proved,
-                    #                  slv.p_implies_q().found_counter_ex, str(slv.p_implies_q().model)))
                     result_queue.put((solver['solver_name'], p_q))
                 elif args=='q_implies_p':
                     print("\n Z3Backend: Received the task q=>p. ")
                     q_p = ImplResult(slv.q_implies_p().proved,slv.q_implies_p().found_counter_ex, str(slv.q_implies_p().model))
-                    #result_queue.put((solver['solver_name'], cloudpickle.dumps(slv.q_implies_p())))
-                    #result_queue.put((solver['solver_name'],slv.q_implies_p().proved,slv.q_implies_p().found_counter_ex, str(slv.q_implies_p().model)))
                     result_queue.put((solver['solver_name'], q_p))
         if (solver['solver_name'] == 'CVC5Backend'):
             slv = CVC5Backend(solver['policy_type'], solver['policy_set_p'], solver['policy_set_q'])
@@ -405,15 +395,12 @@ class PolicyEquivalenceChecker(object):
                     p_q = ImplResult(slv.p_implies_q().proved,
                                      slv.p_implies_q().found_counter_ex, str(slv.p_implies_q().model))
                     result_queue.put((solver['solver_name'], p_q))
-                    #result_queue.put((solver['solver_name'], cloudpickle.dumps(slv.p_implies_q())))
-                    #result_queue.put((solver['solver_name'],slv.p_implies_q().proved,slv.p_implies_q().found_counter_ex, str(slv.p_implies_q().model)))
                 elif args=='q_implies_p':
                     print("\n CVC5Backend: Received the task q=>p. ")
                     q_p = ImplResult(slv.q_implies_p().proved, slv.q_implies_p().found_counter_ex,
                                      str(slv.q_implies_p().model))
                     result_queue.put((solver['solver_name'], q_p))
-                    #result_queue.put((solver['solver_name'], cloudpickle.dumps(slv.q_implies_p())))
-                    #result_queue.put((solver['solver_name'],slv.q_implies_p().proved,slv.q_implies_p().found_counter_ex, str(slv.q_implies_p().model)))
+
 
     def p_implies_q(self):
         """
@@ -421,8 +408,6 @@ class PolicyEquivalenceChecker(object):
         If there are multiple backends, this function starts each backend in a separate thread and returns
         as soon as the first thread completes.
         """
-        # If we have more than one solver, start each in a separate thread
-        #if len(self.solvers) >= 1: ## Remove this line
         if len(self.solvers)==1:
             if self.solvers[0]['solver_name'] == 'Z3Backend':
                 self.task_queue_z3.put("p_implies_q")
@@ -433,12 +418,7 @@ class PolicyEquivalenceChecker(object):
             self.task_queue_cvc5.put("p_implies_q")
         # wait for the first result, blocking indefinitely.
         print("\nInternal logs starts ----")
-        child_proc_list = []
-        #slv_name,result, found_counter_ex, model_str = self.result_queue.get(block=True, timeout=20)
-        #slv_name, cloud_pickled_result = self.result_queue.get(block=True, timeout=20)
         slv_name, result_obj = self.result_queue.get(block=True, timeout=20)
-        #result_obj = cloudpickle.loads(cloud_pickled_result)
-        result, found_counter_ex, model_str = result_obj.proved, result_obj.found_counter_ex,result_obj.model
         self.terminate_solver_process(slv_name)
         child_proc_list = multiprocessing.active_children()
         print("\n Active children after termination : " + str(child_proc_list))
@@ -448,9 +428,10 @@ class PolicyEquivalenceChecker(object):
                 if self.solvers[i]['solver_name'] != slv_name:
                     self.create_solver_process(self.solvers[i]['solver_name'])
         print("\n Updated processes: " + str(self.processes))
+        print("\n p=>q: Result obj: proved: " + str(result_obj.proved) + "  found_counter_ex: " + str(
+            result_obj.found_counter_ex) + " model:" + str(result_obj.model) + "\n")
         print("\n Internal logs ends ----")
-        return slv_name, result, found_counter_ex, model_str
-
+        return slv_name, result_obj
 
     def q_implies_p(self):
         """
@@ -469,13 +450,8 @@ class PolicyEquivalenceChecker(object):
             self.task_queue_cvc5.put("q_implies_p")
         print("\nInternal logs starts ----")
         # wait for the first result, blocking indefinitely.
-        print("\nInternal logs starts ----")
-        child_proc_list = []
-        # slv_name,result, found_counter_ex, model_str = self.result_queue.get(block=True, timeout=20)
-        # slv_name, cloud_pickled_result = self.result_queue.get(block=True, timeout=20)
         slv_name, result_obj = self.result_queue.get(block=True, timeout=20)
-        # result_obj = cloudpickle.loads(cloud_pickled_result)
-        result, found_counter_ex, model_str = result_obj.proved, result_obj.found_counter_ex, result_obj.model
+
         self.terminate_solver_process(slv_name)
         child_proc_list = multiprocessing.active_children()
         print("\n Active children after termination : " + str(child_proc_list))
@@ -485,9 +461,10 @@ class PolicyEquivalenceChecker(object):
                     self.create_solver_process(self.solvers[i]['solver_name'])
 
         print("Updated processes: " + str(self.processes))
+        print("\n q=>p: Result obj: proved: "+ str(result_obj.proved)+"  found_counter_ex: " + str(result_obj.found_counter_ex) + " model:"+str(result_obj.model)+ "\n")
         print("\n Internal logs ends ----")
-        return slv_name, result, found_counter_ex, model_str
 
+        return slv_name, result_obj
     def create_solver_process(self, solver_name):
         new_solver = {'solver_name': solver_name, 'policy_type': self.policy_type,
                       'policy_set_p': self.policy_set_p,

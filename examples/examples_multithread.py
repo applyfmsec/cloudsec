@@ -36,13 +36,13 @@ def example():
                                        policy_set_q=[q], backend='*')
 
     print("~~~~~~ Example p=>q ~~~~~~")
-    solver, r, found_ex,model_str = checker.p_implies_q()
-    print("\n p=>q: solver: " + solver + " :" + str(r)+ " found_counter_ex: " + str(found_ex))
-    print("\n model: " + str(model_str))
+    solver, result = checker.p_implies_q()
+    print("\n p=>q: solver: " + solver + " :" + str(result.proved)+ " found_counter_ex: " + str(result.found_counter_ex))
+    print("\n model: " + str(result.model))
     print("~~~~~~ Example q=>p ~~~~~~")
-    solver,r2, found_ex,model_str = checker.q_implies_p()
-    print("\n q=>p: solver: " + solver + " :"+str(r2)+ " found_counter_ex: " + str(found_ex))
-    print("\n model: " + str(model_str))
+    solver,result = checker.q_implies_p()
+    print("\n q=>p: solver: " + solver + " :" + str(result.proved) + " found_counter_ex: " + str(result.found_counter_ex))
+    print("\n model: " + str(result.model))
 
 
 '''
@@ -96,10 +96,10 @@ def example2():
                                         policy_set_q=[b1, b2], backend='*')
 
     print("\n ~~~~~~ Example 2 p=>q ~~~~~~")
-    solver, r,found_ex,model_str = checker2.p_implies_q()
-    print("\n p=>q: solver: " + solver + " :"+str(r) + " found_counter_ex: " + str(found_ex))
-    print("\n model: " + str(model_str))
+    solver, result = checker2.p_implies_q()
+    print("\n p=>q: solver: " + solver + " :" + str(result.proved) + " found_counter_ex: " + str(result.found_counter_ex))
+    print("\n model: " + str(result.model))
     print("\n ~~~~~~ Example 2 q=>p ~~~~~~")
-    solver,r2,found_ex,model_str = checker2.q_implies_p()
-    print("\n q=>p: solver: " + solver + " :" + str(r2)+ " found_counter_ex: " + str(found_ex))
-    print("\n model:" + str(model_str))
+    solver,result = checker2.q_implies_p()
+    print("\n q=>p: solver: " + solver + " :" + str(result.proved) + " found_counter_ex: " + str(result.found_counter_ex))
+    print("\n model: " + str(result.model))

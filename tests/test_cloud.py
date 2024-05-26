@@ -38,12 +38,11 @@ def test_tapis_policy_set_1a_z3():
                                   policy_set_p=P,
                                   policy_set_q=Q, 
                                   backend='z3')
-    checker.encode()
-    
-    result = checker.p_implies_q()
+    solver_name,result = checker.p_implies_q()
     assert not result.proved
     assert result.found_counter_ex
     assert result.model
+
 
 
 def test_tapis_policy_set_1a_cvc5():
@@ -53,13 +52,10 @@ def test_tapis_policy_set_1a_cvc5():
                                   policy_set_p=P,
                                   policy_set_q=Q, 
                                   backend='cvc5')
-    checker.encode()
-    
-    result = checker.p_implies_q()
+    solver_name, result = checker.p_implies_q()
     assert not result.proved
     assert result.found_counter_ex
     assert result.model
-
 
 def test_tapis_policy_set_1b_z3():
     P, Q = get_policy_sets_1()
@@ -68,11 +64,10 @@ def test_tapis_policy_set_1b_z3():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='z3')
-    checker.encode()    
-    result = checker.q_implies_p()
+
+    solver_name, result = checker.q_implies_p()
     assert result.proved
     assert not result.found_counter_ex
-
 
 def test_tapis_policy_set_1b_cvc5():
     P, Q = get_policy_sets_1()
@@ -81,8 +76,7 @@ def test_tapis_policy_set_1b_cvc5():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='cvc5')
-    checker.encode()    
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert result.proved
     assert not result.found_counter_ex
 
@@ -130,7 +124,6 @@ def get_policy_sets_2():
            decision="allow")
     return [p1, p2, p3, p4], [q1, q2, q3]
 
-
 def test_tapis_policy_set_2_z3():
     # note: q => p because p allows all access to all python files
     P, Q = get_policy_sets_2()
@@ -138,9 +131,8 @@ def test_tapis_policy_set_2_z3():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='z3')
-    checker.encode()
-    
-    result = checker.q_implies_p()
+
+    solver_name,result = checker.q_implies_p()
     assert result.proved
     assert not result.found_counter_ex
 
@@ -152,9 +144,7 @@ def test_tapis_policy_set_2_cvc5():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='cvc5')
-    checker.encode()
-    
-    result = checker.q_implies_p()
+    solver_name,result = checker.q_implies_p()
     assert result.proved
     assert not result.found_counter_ex
 
@@ -180,8 +170,7 @@ def test_tapis_policy_set_3_z3():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='z3')
-    checker.encode()
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert not result.proved
     assert result.found_counter_ex
     assert result.model
@@ -194,8 +183,7 @@ def test_tapis_policy_set_3_cvc5():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='cvc5')
-    checker.encode()
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert not result.proved
     assert result.found_counter_ex
     assert result.model
@@ -240,8 +228,7 @@ def test_tapis_policy_set_4_z3():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='z3')
-    checker.encode()
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert not result.proved
     assert result.found_counter_ex
     assert result.model
@@ -253,11 +240,11 @@ def test_tapis_policy_set_4_cvc5():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='cvc5')
-    checker.encode()
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert not result.proved
     assert result.found_counter_ex
     assert result.model
+
 
 def get_policy_sets_4a():
     # use the P policy set from 4 but change the Q policy set
@@ -271,17 +258,18 @@ def get_policy_sets_4a():
                 decision="deny")
     return P, [q1]
 
+
 def test_tapis_policy_set_4a_z3():
     P, Q = get_policy_sets_4a()
     checker = PolicyEquivalenceChecker(policy_type=tapis_policy_type,
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='z3')
-    checker.encode()
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert not result.proved
     assert result.found_counter_ex
     assert result.model
+
 
 def test_tapis_policy_set_4a_cvc5():
     P, Q = get_policy_sets_4a()
@@ -289,8 +277,7 @@ def test_tapis_policy_set_4a_cvc5():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='cvc5')
-    checker.encode()
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert not result.proved
     assert result.found_counter_ex
     assert result.model
@@ -314,8 +301,7 @@ def test_tapis_policy_set_5_z3():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='z3')
-    checker.encode()
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert result.proved
     assert not result.found_counter_ex
 
@@ -326,8 +312,7 @@ def test_tapis_policy_set_5_cvc5():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='cvc5')
-    checker.encode()
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert result.proved
     assert not result.found_counter_ex
 
@@ -351,8 +336,7 @@ def test_tapis_policy_set_6_z3():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='z3')
-    checker.encode()
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert result.proved
     assert not result.found_counter_ex
 
@@ -363,8 +347,7 @@ def test_tapis_policy_set_6_cvc5():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='cvc5')
-    checker.encode()
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert result.proved
     assert not result.found_counter_ex
 
@@ -404,8 +387,7 @@ def test_tapis_policy_set_7_z3():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='z3')
-    checker.encode()
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert result.proved
     assert not result.found_counter_ex
 
@@ -416,8 +398,7 @@ def test_tapis_policy_set_7_cvc5():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='cvc5')
-    checker.encode()
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert result.proved
     assert not result.found_counter_ex
 
@@ -444,15 +425,15 @@ def get_policy_sets_8():
 
 def test_tapis_policy_set_8_z3():
     P, Q = get_policy_sets_8()
-    checker = PolicyEquivalenceChecker(policy_type=tapis_policy_type, 
+    checker = PolicyEquivalenceChecker(policy_type=tapis_policy_type,
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='z3')
-    checker.encode()
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert result.proved
     assert not result.found_counter_ex
-    assert not result.model
+    assert result.model=='None'
+
 
 
 def test_tapis_policy_set_8_cvc5():
@@ -461,11 +442,10 @@ def test_tapis_policy_set_8_cvc5():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='cvc5')
-    checker.encode()
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert result.proved
     assert not result.found_counter_ex
-    assert not result.model
+    assert result.model == '[]'
 
 def get_policy_sets_9():
     # use the P policy set from 4 but change the Q policy set
@@ -484,8 +464,7 @@ def test_tapis_policy_set_9_z3():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='z3')
-    checker.encode()
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert not result.proved
     assert result.found_counter_ex
     assert result.model
@@ -497,8 +476,7 @@ def test_tapis_policy_set_9_cvc5():
                                   policy_set_p=P,
                                   policy_set_q=Q,
                                   backend='cvc5')
-    checker.encode()
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert not result.proved
     assert result.found_counter_ex
     assert result.model

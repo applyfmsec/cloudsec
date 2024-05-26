@@ -2,9 +2,10 @@ import sys
 sys.path.append('/home/cloudsec')
 sys.path.append('/home/cloudsec/cloudsec')
 
-import z3 
+import z3
 from cloudsec.core import Policy, PolicyEquivalenceChecker
 from cloudsec.cloud import http_api_policy_type
+from cloudsec.cloud import tapis_policy_type
 
 # Examples of policies
 p = Policy(policy_type=http_api_policy_type, 
@@ -102,9 +103,7 @@ checker2 = PolicyEquivalenceChecker(policy_type=http_api_policy_type,
                                   policy_set_p=[a1, a2, a3],
                                   policy_set_q=[b1, b2])
 
-checker2.encode()
-
-c1 = Policy(policy_type=http_api_policy_type, 
+c1 = Policy(policy_type=http_api_policy_type,
            principal=("a2cps", "jstubbs"), 
            resource=("a2cps", "files", "s2/home/jstubbs/a.out"),
            action="PUT",
@@ -119,8 +118,6 @@ checker3 = PolicyEquivalenceChecker(policy_type=http_api_policy_type,
 # On the other hand, q allows PUT:s2/home/jstubbs/a.out but p does not because of a2 (deny PUT:s2/home/jstubbs/*)
 # Therefore, q is not less permissive that p, and hence, q NOT=> p here.
 
-checker3.encode()
-
 # here, we add an additional deny policy (a3) to the p set, which means that q is still not less
 # permissive than p (and hence, q NOT=> p still).
 # However, p still allows some additional actions (e.g., DELETE) on the s2/home/jstubbs/* tree, so p is
@@ -128,9 +125,6 @@ checker3.encode()
 checker4 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[a1, a2, a3],
                                   policy_set_q=[c1])
-
-checker4.encode()
-
 
 # # can call these solver methods directly; these in turn call "encode()" for the user
 # checker.p_implies_q()
@@ -204,4 +198,4 @@ checker5 = PolicyEquivalenceChecker(policy_type=http_api_policy_type,
                                   policy_set_p=[r],
                                   policy_set_q=[s])
 
-checker5.encode()
+

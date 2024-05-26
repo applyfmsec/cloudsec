@@ -22,7 +22,7 @@ from cloudsec.core import ALPHANUM_SET, PATH_CHAR_SET
 
 # backends
 from cloudsec.backends.z3sec import Z3Backend
-
+from cloudsec.backends import ImplResult
 
 def get_test_enum():
     # exact matching not supported currently for strings...
@@ -142,13 +142,18 @@ def test_z3_policy_checker_1():
                                   policy_set_p=[p],
                                   policy_set_q=[q1, q2],
                                   backend='z3')
-    checker.encode()
+
     # note: q => p since p is more permissive. 
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
+    #result = ImplResult(proved, found_counter_ex, model_str)
+
+
     assert result.proved
+
     assert not result.found_counter_ex
+
     # note: p does not imply q since p is strictly more permissive. 
-    result = checker.p_implies_q()
+    solver_name, result = checker.p_implies_q()
     assert not result.proved
     assert result.found_counter_ex
     # the model should contain the counter example
@@ -175,13 +180,12 @@ def test_cvc5_policy_checker_1():
                                   policy_set_p=[p],
                                   policy_set_q=[q1, q2],
                                   backend='cvc5')
-    checker.encode()
     # note: q => p since p is more permissive.
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert result.proved
     assert not result.found_counter_ex
     # note: p does not imply q since p is strictly more permissive.
-    result = checker.p_implies_q()
+    solver_name, result = checker.p_implies_q()
     assert not result.proved
     assert result.found_counter_ex
     # the model should contain the counter example
@@ -249,11 +253,10 @@ def test_z3_policy_checker_template():
                                   policy_set_p=[p1, p2],
                                   policy_set_q=[q],
                                   backend='z3')
-    checker.encode()
-    result = checker.p_implies_q()
+    solver_name, result = checker.p_implies_q()
     assert result.proved
     assert not result.found_counter_ex
 
-    result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p()
     assert not result.proved
     assert result.found_counter_ex
