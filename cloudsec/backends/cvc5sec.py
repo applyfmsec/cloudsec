@@ -184,10 +184,13 @@ class CVC5Backend(CloudsecBackend):
 
                 # tuples have a `fields` attribute
                 if hasattr(policy_comp, 'fields'):
+                    #print("encoding Tuple ---")
                     component_encodings.extend(self._encode_tuple_list(policy_comp, policy_comp.data))
                 elif hasattr(component, 'values'):
+                    #print("encoding Enum ---")
                     component_encodings.append(self._encode_string_enum(policy_comp, policy_comp.data))
                 elif hasattr(policy_comp, 'max_len') and hasattr(policy_comp, 'char_set'):
+                    #print("encoding String ---")
                     component_encodings.append(self._encode_string(policy_comp, policy_comp.data))
 
             if len(component_encodings) == 1:
@@ -198,6 +201,7 @@ class CVC5Backend(CloudsecBackend):
         return final_result
 
     def _check_and_create_free_variable(self, free_var_name):
+        #print("free_var_name: ", free_var_name)
         if len(self.free_variables) == 0:
             free_var = self.slv.mkConst(self.string, free_var_name)
             self.free_variables.append(free_var)
@@ -255,10 +259,11 @@ class CVC5Backend(CloudsecBackend):
         self.q_deny_match_list = self.encode_policy_set(self.q_deny_set)
         self.Q = self.combine_allow_deny_set_encodings(self.q_allow_match_list, self.q_deny_match_list)
 
+
     def prove(self, statement_1, statement_2) -> ImplResult:
-        # print("free variables list:", self.free_variables)
+        #print("free variables list:", self.free_variables)
         stmt = self.slv.mkTerm(Kind.NOT, self.slv.mkTerm(Kind.IMPLIES, statement_1, statement_2))
-        # print("\n statement:= ", stmt, "\n")
+        #print("\n statement:= ", stmt, "\n")
         result = self.slv.checkSatAssuming(stmt)
         proved = False
         found_counter_ex = True
@@ -279,25 +284,24 @@ class CVC5Backend(CloudsecBackend):
         impl_result = ImplResult(proved=proved, found_counter_ex=found_counter_ex, model=model)
         return impl_result
 
-
     def p_implies_q(self) -> ImplResult:
-        print("\n Prove p => q ")
+        #print("\n Prove p => q ")
         result = self.prove(self.P, self.Q)
-        print("\n Summary: p => q result: \n")
-        print("proved: ", result.proved)
-        if not result.proved :
-            print("found counter example: ", result.found_counter_ex)
-            if result.found_counter_ex:
-                print("counter-example : ", result.model)
+        #print("\n Summary: p => q result: \n")
+        #print("\t proved: ", result.proved)
+        # if not result.proved :
+        #     print("found counter example: ", result.found_counter_ex)
+        #     if result.found_counter_ex:
+        #         print("\t counter-example : ", result.model)
         return result
 
     def q_implies_p(self) -> ImplResult:
-        print("\n Prove q => p : ")
+        #print("\n Prove q => p : ")
         result = self.prove(self.Q, self.P)
-        print("\n Summary: q => p result: \n")
-        print("proved: ", result.proved)
-        if not result.proved:
-            print("found counter example: ", result.found_counter_ex)
-            if result.found_counter_ex:
-                print("counter-example : ", result.model)
+        #print("\n Summary: q => p result: \n")
+        #print("proved: ", result.proved)
+        #if not result.proved:
+            #print("found counter example: ", result.found_counter_ex)
+         #   if result.found_counter_ex:
+            #    print("counter-example : ", result.model)
         return result

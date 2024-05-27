@@ -4,8 +4,15 @@ from copy import deepcopy
 from select import select
 import threading, queue
 from typing import Dict, Tuple
-
+#from multiprocessing import Process, Queue
+#from multiprocessing.sharedctypes import Value, Array,copy
+#from multiprocessing import Process, Queue, current_process
+import psutil
+import cloudpickle
+import multiprocessing
 import sys
+from cloudsec.backends import ImplResult
+multiprocessing.set_start_method('fork')
 # these are for the cloudsec container image --
 sys.path.append('/home/cloudsec')
 sys.path.append('/home/cloudsec/cloudsec')
@@ -323,74 +330,108 @@ class PolicyEquivalenceChecker(object):
                 f"backends include: {supported_backends}.")
         self.backend = backend
         self.solvers = []
+        self.num_solvers = 0
+        self.encode_status = {'cvc5': False, 'z3': False}
         if self.backend == 'z3' or self.backend == '*':
             if not z3_available:
                 raise Exception("The z3 backend is not available on this system.")
-            self.solvers.append({'solver': Z3Backend(policy_type, policy_set_p, policy_set_q),
-                                'have_encoded': False})
-
+            self.solvers.append({'solver_name': 'Z3Backend','policy_type':self.policy_type, 'policy_set_p':self.policy_set_p, 'policy_set_q':self.policy_set_q})
+            self.num_solvers = self.num_solvers + 1
         if self.backend == 'cvc5' or self.backend == '*':
             if not cvc_5_available:
                 raise Exception("The cvc5 backend is not available on this system.")
-            self.solvers.append({'solver': CVC5Backend(policy_type, policy_set_p, policy_set_q),
-                                'have_encoded': False})
-    
-    def encode(self):
+            self.solvers.append({'solver_name': 'CVC5Backend', 'policy_type': self.policy_type, 'policy_set_p': self.policy_set_p,
+                                 'policy_set_q': self.policy_set_q})
+            self.num_solvers = self.num_solvers + 1
+        # initialize number of processes
+        num_of_processes = self.num_solvers
+        # create task queue for each solver
+        self.task_queue_cvc5 = multiprocessing.Queue()
+        self.task_queue_z3 = multiprocessing.Queue()
+        self.result_queue = multiprocessing.Queue()
+        # list of child processes running
+        self.processes = []
+
+        # create a process
+        for i in range(num_of_processes):
+            p = self.create_process(self.solvers[i])
+            self.processes.append(p)
+        print("processes: " + str(self.processes))
+
+
+    def create_process(self,solver):
+
+        p = multiprocessing.Process(target=self._process_target,
+                                    args=(self.task_queue_cvc5, self.task_queue_z3, self.result_queue, solver),
+                                    name=f"{solver['solver_name']}", daemon=True)
+        p.start()
+        return p
+
+    def _process_target(self, task_queue_cvc5,task_queue_z3,result_queue,solver):
         """
-        Use `self.backend` to encode the policies.
+        This function wraps `callable` by returning its result on result_queue, which should be of type
+        queue.Queue.
         """
-        for s in self.solvers:
-            if s['have_encoded']:
-                continue
-            s['solver'].encode()
-            s['have_encoded'] = True
+        if (solver['solver_name'] == 'Z3Backend'):
+            slv = Z3Backend(solver['policy_type'], solver['policy_set_p'], solver['policy_set_q'])
+            slv.encode()
+            for args in iter(task_queue_z3.get,'STOP'):
+                if args=='p_implies_q':
+                    print("\n Z3Backend: Received the task p=>q. ")
+                    p_q = ImplResult(slv.p_implies_q().proved,
+                                      slv.p_implies_q().found_counter_ex, str(slv.p_implies_q().model))
+
+                    result_queue.put((solver['solver_name'], p_q))
+                elif args=='q_implies_p':
+                    print("\n Z3Backend: Received the task q=>p. ")
+                    q_p = ImplResult(slv.q_implies_p().proved,slv.q_implies_p().found_counter_ex, str(slv.q_implies_p().model))
+                    result_queue.put((solver['solver_name'], q_p))
+        if (solver['solver_name'] == 'CVC5Backend'):
+            slv = CVC5Backend(solver['policy_type'], solver['policy_set_p'], solver['policy_set_q'])
+            slv.encode()
+            for args in iter(task_queue_cvc5.get,'STOP'):
+                if args=='p_implies_q':
+                    print("\n CVC5Backend: Received the task p=>q. ")
+                    p_q = ImplResult(slv.p_implies_q().proved,
+                                     slv.p_implies_q().found_counter_ex, str(slv.p_implies_q().model))
+                    result_queue.put((solver['solver_name'], p_q))
+                elif args=='q_implies_p':
+                    print("\n CVC5Backend: Received the task q=>p. ")
+                    q_p = ImplResult(slv.q_implies_p().proved, slv.q_implies_p().found_counter_ex,
+                                     str(slv.q_implies_p().model))
+                    result_queue.put((solver['solver_name'], q_p))
+
 
     def p_implies_q(self):
         """
-        Use the backend solvers to check whether P => Q. 
+        Use the backend solvers to check whether P => Q.
         If there are multiple backends, this function starts each backend in a separate thread and returns
-        as soon as the first thread completes. 
+        as soon as the first thread completes.
         """
-        # If we have more than one solver, start each in a separate thread
-        if len(self.solvers) > 1:
-            # the list of the threads we start
-            threads = []
-            # use a queue to communicate results across threads
-            q = queue.Queue()
-            # start each 
-            for s in self.solvers:
-                # the actual backend solver, e.g., Z3Backend or CVC5Backend
-                solver = s['solver']
-                # create and start a new thread
-                t = threading.Thread(target=self._thread_target, 
-                                     args=(q, solver.p_implies_q), 
-                                     name=f"{type(solver)}_p_implies_q", 
-                                     # daemon threads do not prevent the main process from exiting
-                                     daemon=True)
-                t.start()
-                threads.append(t)
-            # wait for the first result, blocking indefinitely. 
-            # TODO: in the future this function could take a timeout param and pass it here
-            result = q.get(block=True, timeout=None)
-            # once we have a result, clean up all of the threads
-            # for t in threads:
-            #     t.stop()
-            return result
-
-        # there is exactly one solver, so just run it in the main thread
+        if len(self.solvers)==1:
+            if self.solvers[0]['solver_name'] == 'Z3Backend':
+                self.task_queue_z3.put("p_implies_q")
+            else:
+                self.task_queue_cvc5.put("p_implies_q")
         else:
-            if not self.solvers[0]['have_encoded']:
-                self.encode()
-            return self.solvers[0]['solver'].p_implies_q()
-        
-    def _thread_target(self, q, callable):
-        """
-        This function wraps `callable` by returning its result on `q`, which should be of type
-        queue.Queue.
-        """
-        result = callable()
-        q.put(result)
+            self.task_queue_z3.put("p_implies_q")
+            self.task_queue_cvc5.put("p_implies_q")
+        # wait for the first result, blocking indefinitely.
+        print("\nInternal logs starts ----")
+        slv_name, result_obj = self.result_queue.get(block=True, timeout=20)
+        self.terminate_solver_process(slv_name)
+        child_proc_list = multiprocessing.active_children()
+        print("\n Active children after termination : " + str(child_proc_list))
 
+        if len(self.solvers)>1 and len(child_proc_list)==1:
+            for i in range(len(self.solvers)):
+                if self.solvers[i]['solver_name'] != slv_name:
+                    self.create_solver_process(self.solvers[i]['solver_name'])
+        print("\n Updated processes: " + str(self.processes))
+        print("\n p=>q: Result obj: proved: " + str(result_obj.proved) + "  found_counter_ex: " + str(
+            result_obj.found_counter_ex) + " model:" + str(result_obj.model) + "\n")
+        print("\n Internal logs ends ----")
+        return slv_name, result_obj
 
     def q_implies_p(self):
         """
@@ -398,41 +439,50 @@ class PolicyEquivalenceChecker(object):
         If there are multiple backends, this function starts each backend in a separate thread and returns
         as soon as the first thread completes. 
         """
-        # If we have more than one solver, start each in a separate thread
-
-        if len(self.solvers) > 1:
-            # the list of the threads we start
-            threads = []
-            # use a queue to communicate results across threads
-            q = queue.Queue()
-            # start each 
-            for s in self.solvers:
-                # the actual backend solver, e.g., Z3Backend or CVC5Backend
-                solver = s['solver']
-                # Create and start a new thread
-                # We use self._thread_target as the target for the thread. This function
-                # takes care of calling the actual backend and putting its result on the queue.
-                # This way, the implementation of each backend doesn't have to worry about queues.
-                t = threading.Thread(target=self._thread_target, 
-                                     # we need to pass both the `q` object and the callable to _thread_target
-                                     args=(q, solver.q_implies_p), 
-                                     # name the thread after the backend solver and the method it is executing
-                                     name=f"{type(solver)}_q_implies_p", 
-                                     # daemon threads do not prevent the main process from exiting
-                                     daemon=True)
-                t.start()
-                threads.append(t)
-            # wait for the first result, blocking indefinitely. 
-            # TODO: in the future this function could take a timeout param and pass it here
-            result = q.get(block=True, timeout=None)
-            # once we have a result, clean up all of the threads
-            # for t in threads:
-            #     t.kill()
-            return result
-        # there is exactly one solver, so just run it in the main thread
+        # start each
+        if len(self.solvers) == 1:
+            if self.solvers[0]['solver_name'] == 'Z3Backend':
+                self.task_queue_z3.put("q_implies_p")
+            else:
+                self.task_queue_cvc5.put("q_implies_p")
         else:
-            if not self.solvers[0]['have_encoded']:
-                self.encode()
-            return self.solvers[0]['solver'].q_implies_p()
+            self.task_queue_z3.put("q_implies_p")
+            self.task_queue_cvc5.put("q_implies_p")
+        print("\nInternal logs starts ----")
+        # wait for the first result, blocking indefinitely.
+        slv_name, result_obj = self.result_queue.get(block=True, timeout=20)
 
+        self.terminate_solver_process(slv_name)
+        child_proc_list = multiprocessing.active_children()
+        print("\n Active children after termination : " + str(child_proc_list))
+        if len(self.solvers) > 1 and len(child_proc_list) == 1:
+            for i in range(len(self.solvers)):
+                if self.solvers[i]['solver_name'] != slv_name:
+                    self.create_solver_process(self.solvers[i]['solver_name'])
 
+        print("Updated processes: " + str(self.processes))
+        print("\n q=>p: Result obj: proved: "+ str(result_obj.proved)+"  found_counter_ex: " + str(result_obj.found_counter_ex) + " model:"+str(result_obj.model)+ "\n")
+        print("\n Internal logs ends ----")
+
+        return slv_name, result_obj
+    def create_solver_process(self, solver_name):
+        new_solver = {'solver_name': solver_name, 'policy_type': self.policy_type,
+                      'policy_set_p': self.policy_set_p,
+                      'policy_set_q': self.policy_set_q}
+        print("Creating a new process for the solver : " + new_solver['solver_name'])
+        pr = self.create_process(new_solver)
+        self.processes.append(pr)
+
+    def terminate_solver_process(self, slv_name):
+        child_proc_list = multiprocessing.active_children()
+        print("\n Active children before termination : " + str(child_proc_list))
+
+        # once we have a result, stop all the process
+        for proc in child_proc_list:
+            if proc.name != slv_name:
+                print("\n Process name being terminated : " + proc.name + " with pid: " + str(proc.pid))
+                proc.terminate()
+
+        for proc in child_proc_list:
+            if proc.name != slv_name:
+                proc.join()

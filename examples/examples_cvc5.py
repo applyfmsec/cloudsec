@@ -4,8 +4,8 @@ sys.path.append('/home/cloudsec/cloudsec')
 
 import cvc5
 from cvc5 import Kind, Term, Solver
-from core import Policy, PolicyEquivalenceChecker
-from cloud import http_api_policy_type
+from cloudsec.core import Policy, PolicyEquivalenceChecker
+from cloudsec.cloud import http_api_policy_type
 
 backend='cvc5'
 # Examples of policies
@@ -26,11 +26,7 @@ checker = PolicyEquivalenceChecker(policy_type=http_api_policy_type,
                                   policy_set_p=[p],
                                   policy_set_q=[q], backend=backend)
 
-checker.encode()
-checker.p_implies_q()
-checker.q_implies_p()
-
-a1 = Policy(policy_type=http_api_policy_type, 
+a1 = Policy(policy_type=http_api_policy_type,
            principal=("a2cps", "jstubbs"), 
            resource=("a2cps", "files", "s2/home/jstubbs/*"),
            action="*",
@@ -67,10 +63,9 @@ b2 = Policy(policy_type=http_api_policy_type,
 
 # Note: {b1, b2} => {a1, a2, a3}    but   {a1,a2,a3}  NOT=> {b1, b2}
 checker2 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
-                                  policy_set_p=[a1,a2],
+                                  policy_set_p=[a1,a2,a3],
                                   policy_set_q=[b1,b2],backend=backend)
 
-checker2.encode()
 
 c1 = Policy(policy_type=http_api_policy_type,
            principal=("a2cps", "jstubbs"), 
@@ -82,7 +77,6 @@ checker3 = PolicyEquivalenceChecker(policy_type=http_api_policy_type,
                                   policy_set_p=[a1,a2],
                                   policy_set_q=[c1],backend=backend)
 
-checker3.encode()
 
 # note that with the old version of the code, checker3 would find the counter example for q => p
 # but checker4 would "prove" that q => p even though p actually had one *additional* deny in checker4 vs checker3, 
@@ -92,9 +86,6 @@ checker3.encode()
 checker4 = PolicyEquivalenceChecker(policy_type=http_api_policy_type, 
                                   policy_set_p=[a1, a2, a3],
                                   policy_set_q=[c1],backend=backend)
-
-checker4.encode()
-
 
 # # can call these solver methods directly; these in turn call "encode()" for the user
 # checker.p_imp_q()
@@ -117,7 +108,7 @@ def sat_term(solver,term):
     return False
 
 # Tests with the CVC5Backend
-from backends.cvc5sec import CVC5Backend
+from cloudsec.backends.cvc5sec import CVC5Backend
 solver = CVC5Backend(http_api_policy_type, [a1, a2], [b1])
 solver._encode_string_enum(a1.components.resource.fields[0], a1.components.resource.data[0])
 solver._encode_string_enum(a1.components.resource.fields[1], a1.components.resource.data[1])
@@ -177,4 +168,3 @@ checker5 = PolicyEquivalenceChecker(policy_type=http_api_policy_type,
                                   policy_set_p=[r],
                                   policy_set_q=[s], backend=backend)
 
-checker5.encode()
