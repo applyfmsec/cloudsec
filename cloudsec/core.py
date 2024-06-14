@@ -319,12 +319,15 @@ class PolicyEquivalenceChecker(object):
                  policy_type: PolicyType, 
                  policy_set_p: "list(Policy)", 
                  policy_set_q: "list(Policy)",
-                 backend="z3"
+                 backend="z3",
+                 timeout=20
                  ):
         supported_backends = set(["z3", "cvc5", "*"])
         self.policy_type = policy_type
         self.policy_set_p = policy_set_p
         self.policy_set_q = policy_set_q
+        self.timeout = timeout
+
         if not backend in supported_backends:
             raise Exception(f"The specified backend ({backend}) is currently not supported; The supported "\
                 f"backends include: {supported_backends}.")
@@ -402,7 +405,7 @@ class PolicyEquivalenceChecker(object):
                     result_queue.put((solver['solver_name'], q_p))
 
 
-    def p_implies_q(self):
+    def p_implies_q(self, timeout=None):
         """
         Use the backend solvers to check whether P => Q.
         If there are multiple backends, this function starts each backend in a separate thread and returns
@@ -417,8 +420,10 @@ class PolicyEquivalenceChecker(object):
             self.task_queue_z3.put("p_implies_q")
             self.task_queue_cvc5.put("p_implies_q")
         # wait for the first result, blocking indefinitely.
+        if not timeout:
+            timeout = self.timeout
         print("\nInternal logs starts ----")
-        slv_name, result_obj = self.result_queue.get(block=True, timeout=20)
+        slv_name, result_obj = self.result_queue.get(block=True, timeout=timeout)
         self.terminate_solver_process(slv_name)
         child_proc_list = multiprocessing.active_children()
         print("\n Active children after termination : " + str(child_proc_list))
@@ -433,7 +438,7 @@ class PolicyEquivalenceChecker(object):
         print("\n Internal logs ends ----")
         return slv_name, result_obj
 
-    def q_implies_p(self):
+    def q_implies_p(self, timeout=None):
         """
         Use the backend solvers to check whether Q => P. 
         If there are multiple backends, this function starts each backend in a separate thread and returns
@@ -448,9 +453,11 @@ class PolicyEquivalenceChecker(object):
         else:
             self.task_queue_z3.put("q_implies_p")
             self.task_queue_cvc5.put("q_implies_p")
+        if not timeout:
+            timeout = self.timeout
         print("\nInternal logs starts ----")
         # wait for the first result, blocking indefinitely.
-        slv_name, result_obj = self.result_queue.get(block=True, timeout=20)
+        slv_name, result_obj = self.result_queue.get(block=True, timeout=timeout)
 
         self.terminate_solver_process(slv_name)
         child_proc_list = multiprocessing.active_children()
