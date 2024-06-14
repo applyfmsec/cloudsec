@@ -8,7 +8,7 @@ from typing import Dict, Tuple
 #from multiprocessing.sharedctypes import Value, Array,copy
 #from multiprocessing import Process, Queue, current_process
 import psutil
-import cloudpickle
+
 import multiprocessing
 import sys
 from cloudsec.backends import ImplResult
