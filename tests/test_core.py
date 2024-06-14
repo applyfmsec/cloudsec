@@ -181,11 +181,11 @@ def test_cvc5_policy_checker_1():
                                   policy_set_q=[q1, q2],
                                   backend='cvc5')
     # note: q => p since p is more permissive.
-    solver_name, result = checker.q_implies_p()
+    solver_name, result = checker.q_implies_p(timeout=120)
     assert result.proved
     assert not result.found_counter_ex
     # note: p does not imply q since p is strictly more permissive.
-    solver_name, result = checker.p_implies_q()
+    solver_name, result = checker.p_implies_q(timeout=120)
     assert not result.proved
     assert result.found_counter_ex
     # the model should contain the counter example

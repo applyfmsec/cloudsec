@@ -52,7 +52,7 @@ def test_tapis_policy_set_1a_cvc5():
                                   policy_set_p=P,
                                   policy_set_q=Q, 
                                   backend='cvc5')
-    solver_name, result = checker.p_implies_q()
+    solver_name, result = checker.p_implies_q(timeout=60)
     assert not result.proved
     assert result.found_counter_ex
     assert result.model
@@ -132,7 +132,7 @@ def test_tapis_policy_set_2_z3():
                                   policy_set_q=Q,
                                   backend='z3')
 
-    solver_name,result = checker.q_implies_p()
+    solver_name,result = checker.q_implies_p(timeout=60)
     assert result.proved
     assert not result.found_counter_ex
 
