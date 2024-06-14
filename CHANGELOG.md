@@ -1,5 +1,17 @@
 All notable changes to this project will be documented in this file.
 
+## 0.3.0 - 2024-06-17
+This release adds support for portfolio solving with a configurable timeout.
+
+### Breaking Changes:
+- None
+
+### New features
+- Added support for running multiple solvers in parallel. 
+- Added configurable timeout to address the issue of varying time the solver takes to solve depending on the underlying machines on which it is running
+
+### Bug fixes:
+- None
 
 ## 0.2.0 - 2023-10-31 
 This second release adds support for variables in policies, also referred to as "policy templates".
@@ -12,6 +24,8 @@ This second release adds support for variables in policies, also referred to as 
 to define entire sets of policies in a concise way.
 
 - Add support for running CloudSec without all SMT solvers installed. The library now attempts to install each library and catches failures (Issue #3).
+
+- Added Dockerfile to build ARM64 image for the Cloudsec library
 
 ### Bug fixes:
 - None
