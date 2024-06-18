@@ -154,6 +154,16 @@ make build
 
 See the Makefile for commands to build specific images.
 
+## Building ARM64 Image from Source
+
+To build ARM64 based docker image from source, we have to build it manually using the following command:
+```bash
+$ docker build -t ghcr.io/applyfmsec/cloudsec -f Dockerfile-arm64 .
+```
+Once ARM64 based docker image is built, see the Makefile for commands to build specific images manually. For example, to build cloudsec-tests image, use the following command:
+```bash
+$ docker build -t ghcr.io/applyfmsec/cloudsec-tests -f Dockerfile-tests .
+```
 
 ## Trying the Examples with Docker
 
